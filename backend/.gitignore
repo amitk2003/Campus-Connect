@@ -1,0 +1,4 @@
+.env
+userdata.txt
+/pycache__
+/venv
