@@ -269,6 +269,11 @@ export default function LostAndFound() {
                        {report.description || 'No description provided.'}
                     </p>
                     <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6">
+                       {report.user_anon_name && (
+                         <span className="flex items-center text-blue-500 font-semibold italic">
+                           <Clock className="w-4 h-4 mr-2 text-slate-400"/> Reported by: {report.user_anon_name}
+                         </span>
+                       )}
                        <span className="flex items-center"><Tag className="w-4 h-4 mr-2"/> {report.category}</span>
                        {report.location && <span className="flex items-center"><MapPin className="w-4 h-4 mr-2"/> {report.location}</span>}
                     </div>

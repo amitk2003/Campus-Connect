@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ShoppingBag, Tag, ShoppingCart, IndianRupee, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ShoppingBag, Tag, ShoppingCart, IndianRupee, MapPin, Search, SlidersHorizontal, X, User } from 'lucide-react';
 import { addNotification } from '../components/NotificationBell';
 
 export default function Marketplace() {
@@ -21,7 +21,6 @@ export default function Marketplace() {
     category: 'General',
     price: '',
     description: '',
-    location: '',
     image: null
   });
 
@@ -136,7 +135,6 @@ export default function Marketplace() {
   submitData.append('price', formData.price);
   submitData.append('category', formData.category);
   submitData.append('description', formData.description);
-  submitData.append('location', formData.location);
 
   if (formData.image) {
     submitData.append('image', formData.image);
@@ -185,7 +183,6 @@ export default function Marketplace() {
       category: item.category,
       price: item.price,
       description: item.description,
-      location: item.pickup_location,
       image: null
     });
     setActiveTab('sell');
@@ -343,6 +340,11 @@ export default function Marketplace() {
                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 line-clamp-2 flex-grow">
                        {item.description || "No description provided."}
                     </p>
+                    {item.seller_anon_name && (
+                      <div className="text-xs text-purple-500 font-semibold mb-2 flex items-center">
+                        <User className="w-3 h-3 mr-1"/> Sold by: {item.seller_anon_name}
+                      </div>
+                    )}
                     {item.pickup_location && (
                       <div className="text-xs text-slate-400 mb-3 flex items-center">
                         <MapPin className="w-3 h-3 mr-1"/> {item.pickup_location}
@@ -424,10 +426,7 @@ export default function Marketplace() {
               )}
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Pickup Location</label>
-              <input type="text" name="location" value={formData.location} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white" placeholder="e.g. Meet at Main Gate" />
-            </div>
+
 
             {formData.price && (
               <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 text-sm">

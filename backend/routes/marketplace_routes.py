@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from db import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import datetime
 import os
 import stripe
@@ -21,9 +21,15 @@ stripe.api_key = STRIPE_SECRET_KEY
 @marketplace_bp.route('/items', methods=['POST'])
 @jwt_required()
 def post_item():
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot post items"}), 403
+
     # Support multipart/form-data for file uploads
     data = request.form if request.form else request.get_json()
     seller_id = get_jwt_identity()
+    user = db['Users'].find_one({"_id": ObjectId(seller_id)})
+    anon_name = user.get('anon_name', 'Anonymous') if user else 'Anonymous'
 
     if not data or not data.get('title') or not data.get('price'):
         return jsonify({"message": "Missing required fields (title, price)"}), 400
@@ -44,6 +50,7 @@ def post_item():
         "price": float(data.get('price')),
         "category": data.get('category', 'General'),
         "seller_id": seller_id,
+        "seller_anon_name": anon_name,  # Store the anonymous name
         "status": "Available",
         "image_url": image_url,
         "pickup_location": data.get('location', ''),
@@ -51,7 +58,7 @@ def post_item():
     }
 
     result = marketplace_collection.insert_one(new_item)
-    return jsonify({"message": "Item posted successfully", "item_id": str(result.inserted_id)}), 201
+    return jsonify({"message": "Item posted successfully", "item_id": str(result.inserted_id), "seller_anon_name": anon_name}), 201
 
 @marketplace_bp.route('/items', methods=['GET'])
 def get_items():
@@ -90,6 +97,11 @@ def get_items():
         item['_id'] = str(item['_id'])
         if 'created_at' in item:
             item['created_at'] = item['created_at'].isoformat()
+        
+        # Hide location to prevent bypassing the platform
+        if 'pickup_location' in item:
+            del item['pickup_location']
+            
         items.append(item)
 
     return jsonify(items), 200
@@ -107,6 +119,10 @@ def get_item(item_id):
 @marketplace_bp.route('/buy/<item_id>', methods=['POST'])
 @jwt_required()
 def buy_item(item_id):
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot buy items"}), 403
+
     buyer_id = get_jwt_identity()
 
     try:

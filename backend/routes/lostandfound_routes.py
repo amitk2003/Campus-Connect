@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from db import db
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import datetime
 import os
 import stripe
@@ -124,8 +124,14 @@ def smart_match(new_report, found_report):
 @lostandfound_bp.route('/report', methods=['POST'])
 @jwt_required()
 def create_report():
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot report lost/found items"}), 403
+
     data = request.form if request.form else request.get_json()
     user_id = get_jwt_identity()
+    user = db['Users'].find_one({"_id": ObjectId(user_id)})
+    anon_name = user.get('anon_name', 'Anonymous') if user else 'Anonymous'
 
     if not data or not data.get('item_name') or not data.get('type'):
         return jsonify({"message": "Missing item_name or type (lost/found)"}), 400
@@ -144,6 +150,7 @@ def create_report():
 
     new_report = {
         "user_id": user_id,
+        "user_anon_name": anon_name,
         "type": report_type,
         "item_name": data.get('item_name'),
         "category": data.get('category', 'General'),
@@ -237,6 +244,10 @@ def find_matches(report_id):
 @lostandfound_bp.route('/claim', methods=['POST'])
 @jwt_required()
 def submit_claim():
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot submit claims"}), 403
+
     data = request.get_json() if request.is_json else request.form
     if not data:
         data = {}
