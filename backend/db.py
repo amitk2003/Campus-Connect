@@ -1,13 +1,15 @@
 from pymongo import MongoClient
 from config import Config
 
-def get_db():
-    try:
-        client = MongoClient(Config.MONGO_URI)
-        db = client.get_database()
-        print("✅ Connected to DB:", db.name)
-        return db
-    except Exception as e:
-        print("❌ DB Connection Error:", e)
+client = None
+db = None
 
-db = get_db()
+try:
+    client = MongoClient(Config.MONGO_URI)
+    db = client["OnlineMarketplace"]
+    print("✅ MongoDB connected")
+except Exception as e:
+    print("❌ DB Connection Error:", e)
+
+def get_db():
+    return db
