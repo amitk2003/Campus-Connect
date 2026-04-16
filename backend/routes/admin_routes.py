@@ -210,4 +210,52 @@ def get_all_transactions():
 @admin_required
 def get_all_payments():
     payments = list(payments_collection.find().sort("created_at", -1))
+    for p in payments:
+        p['_id'] = str(p['_id'])
     return jsonify(payments), 200
+
+
+# ✅ Get All Marketplace Items
+@admin_bp.route('/marketplace', methods=['GET'])
+@admin_required
+def get_all_marketplace_items():
+    items = list(marketplace_collection.find().sort("created_at", -1))
+    for item in items:
+        item['_id'] = str(item['_id'])
+        seller = users_collection.find_one({"_id": ObjectId(item.get("seller_id"))})
+        item['seller_name'] = seller.get('name', 'Unknown') if seller else 'Unknown'
+        item['seller_email'] = seller.get('email', 'Unknown') if seller else 'Unknown'
+    return jsonify(items), 200
+
+
+# ✅ Delete Marketplace Item
+@admin_bp.route('/marketplace/<item_id>', methods=['DELETE'])
+@admin_required
+def delete_marketplace_item(item_id):
+    result = marketplace_collection.delete_one({"_id": ObjectId(item_id)})
+    if result.deleted_count:
+        return jsonify({"message": "Item deleted successfully"}), 200
+    return jsonify({"message": "Item not found"}), 404
+
+
+# ✅ Get All Lost & Found Reports
+@admin_bp.route('/lost-and-found', methods=['GET'])
+@admin_required
+def get_all_reports():
+    reports = list(reports_collection.find().sort("created_at", -1))
+    for report in reports:
+        report['_id'] = str(report['_id'])
+        reporter = users_collection.find_one({"_id": ObjectId(report.get("user_id"))})
+        report['reporter_name'] = reporter.get('name', 'Unknown') if reporter else 'Unknown'
+        report['reporter_email'] = reporter.get('email', 'Unknown') if reporter else 'Unknown'
+    return jsonify(reports), 200
+
+
+# ✅ Delete Lost & Found Report
+@admin_bp.route('/lost-and-found/<report_id>', methods=['DELETE'])
+@admin_required
+def delete_report(report_id):
+    result = reports_collection.delete_one({"_id": ObjectId(report_id)})
+    if result.deleted_count:
+        return jsonify({"message": "Report deleted successfully"}), 200
+    return jsonify({"message": "Report not found"}), 404

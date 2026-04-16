@@ -42,7 +42,12 @@ export default function AdminDashboard() {
 
       setStats(statsRes.data);
       setClaims(claimsRes.data);
-      setTransactions(txRes.data);
+      
+      // ✅ Ensure unique transactions by ID to avoid visual duplication
+      const uniqueTransactions = txRes.data.filter((v, i, a) => 
+        a.findIndex(t => t._id === v._id) === i
+      );
+      setTransactions(uniqueTransactions);
 
     } catch (err) {
       console.error(err);
@@ -108,12 +113,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-red-500 p-1 rounded-xl mb-6 max-w-md">
+      <div className="flex bg-slate-800 p-1 rounded-xl mb-6 max-w-md">
         {['overview', 'claims', 'transactions'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveSection(tab)}
-            className={`flex-1 py-2 rounded-lg capitalize ${activeSection === tab ? 'bg-black shadow font-semibold' : ''}`}
+            className={`flex-1 py-2 px-4 rounded-lg capitalize whitespace-nowrap ${activeSection === tab ? 'bg-blue-600 text-white shadow font-semibold' : 'text-slate-400 hover:text-white'}`}
           >
             {tab}
           </button>
@@ -163,51 +168,44 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Transactions */}
+      {/* Transactions Management */}
       {activeSection === 'transactions' && (
-        <div className="bg-zinc-700 rounded-xl shadow overflow-x-auto">
+        <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-500">
+            <thead className="bg-slate-900/50 text-slate-400">
               <tr>
-                <th className="p-3 text-left">Item</th>
-                <th className="p-3 text-left">Buyer</th>
-                <th className="p-3 text-left">Seller</th>
-                <th className="p-3 text-right">Price</th>
-                <th className="p-3 text-right">Fee</th>
-                <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-right">Date</th>
+                <th className="p-4 text-left">Item</th>
+                <th className="p-4 text-left">Buyer</th>
+                <th className="p-4 text-left">Seller</th>
+                <th className="p-4 text-right">Price</th>
+                <th className="p-4 text-right">Fee</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4 text-right">Date</th>
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="divide-y divide-slate-700">
               {transactions.map(tx => (
-                <tr key={tx._id} className="border-t">
-
-                  <td className="p-3">{tx.item_name}</td>
-
-                  {/* Buyer Info */}
-                  <td className="p-3">
-                    <div className="font-medium">{tx.buyer_name}</div>
-                    <div className="text-xs text-gray-400">{tx.buyer_email}</div>
-                    <div className="text-xs text-purple-500">{tx.buyer_anon}</div>
+                <tr key={tx._id} className="hover:bg-slate-700/30 transition-colors">
+                  <td className="p-4 text-white font-medium">{tx.item_name}</td>
+                  <td className="p-4">
+                    <div className="font-medium text-slate-200">{tx.buyer_name}</div>
+                    <div className="text-xs text-slate-500">{tx.buyer_email}</div>
                   </td>
-
-                  {/* Seller Info */}
-                  <td className="p-3">
-                    <div className="font-medium">{tx.seller_name}</div>
-                    <div className="text-xs text-gray-400">{tx.seller_email}</div>
-                    <div className="text-xs text-purple-500">{tx.seller_anon}</div>
+                  <td className="p-4">
+                    <div className="font-medium text-slate-200">{tx.seller_name}</div>
+                    <div className="text-xs text-slate-500">{tx.seller_email}</div>
                   </td>
-
-                  <td className="p-3 text-right">₹{tx.price}</td>
-                  <td className="p-3 text-right text-green-600">₹{tx.platform_fee}</td>
-
-                  <td className="p-3 text-center">{tx.status}</td>
-
-                  <td className="p-3 text-right">
+                  <td className="p-4 text-right text-slate-200">₹{tx.price}</td>
+                  <td className="p-4 text-right text-green-400 font-semibold">₹{tx.platform_fee}</td>
+                  <td className="p-4 text-center">
+                    <span className="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right text-slate-500">
                     {new Date(tx.created_at).toLocaleDateString()}
                   </td>
-
                 </tr>
               ))}
             </tbody>

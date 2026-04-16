@@ -258,6 +258,10 @@ def get_my_items():
 @jwt_required()
 def delete_item(item_id):
     """Allow seller to delete their own listing."""
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot delete items from here. Use Admin Dashboard."}), 403
+        
     user_id = get_jwt_identity()
     try:
         item = marketplace_collection.find_one({"_id": ObjectId(item_id)})
@@ -274,6 +278,10 @@ def delete_item(item_id):
 @jwt_required()
 def edit_item(item_id):
     """Allow seller to edit their own listing."""
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot edit items from here. Use Admin Dashboard."}), 403
+
     user_id = get_jwt_identity()
     try:
         data = request.form if request.form else request.get_json()

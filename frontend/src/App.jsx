@@ -5,6 +5,7 @@ import './App.css'
 import LostAndFound from './pages/LostAndFound'
 import Marketplace from './pages/Marketplace'
 import AdminDashboard from './pages/AdminDashboard'
+import ResetPassword from './pages/ResetPassword'
 import AuthModal from './components/AuthModal'
 import NotificationBell from './components/NotificationBell'
 
@@ -108,6 +109,7 @@ function App() {
             <Route path="/lost-found" element={<LostAndFound />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </main>
         
@@ -146,7 +148,7 @@ function Home() {
        
        <div className="max-w-4xl text-center space-y-10 relative">
          <div className="inline-block px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm text-sm font-semibold text-slate-600 dark:text-slate-300 shadow-sm mb-4">
-            ✨ Smarter. Safer. Connected.
+             Smarter. Safer. Connected.
          </div>
          <h1 className="text-5xl md:text-6xl lg:text-8xl font-black tracking-tight leading-tight">
            Your Smart Campus <br/> 

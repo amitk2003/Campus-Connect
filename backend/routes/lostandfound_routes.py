@@ -208,6 +208,9 @@ def get_reports():
 @jwt_required()
 def find_matches(report_id):
     """Manually trigger matching for an existing report."""
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Admin cannot trigger participant matches"}), 403
     try:
         report = reports_collection.find_one({"_id": ObjectId(report_id)})
         if not report:
@@ -337,6 +340,9 @@ def submit_claim():
 @lostandfound_bp.route('/claims', methods=['GET'])
 @jwt_required()
 def get_claims():
+    claims = get_jwt()
+    if claims.get('role', '').lower() == 'admin':
+        return jsonify({"message": "Use /api/admin/claims instead"}), 403
     claims = list(claims_collection.find().sort("created_at", -1))
     return jsonify(claims), 200
 

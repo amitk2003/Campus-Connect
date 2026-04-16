@@ -11,6 +11,8 @@ export default function LostAndFound() {
   const [claimModal, setClaimModal] = useState(null); // report object or null
   const [verificationText, setVerificationText] = useState('');
 
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+
   const [formData, setFormData] = useState({
     type: 'lost',
     item_name: '',
@@ -205,12 +207,14 @@ export default function LostAndFound() {
           >
             <Search className="inline w-4 h-4 mr-2"/> Browse
           </button>
-          <button 
-            onClick={() => setActiveTab('report')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
-          >
-            <PlusCircle className="inline w-4 h-4 mr-2"/> Report Item
-          </button>
+          {user?.role !== 'Admin' && (
+            <button 
+              onClick={() => setActiveTab('report')}
+              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
+            >
+              <PlusCircle className="inline w-4 h-4 mr-2"/> Report Item
+            </button>
+          )}
         </div>
       </div>
 
@@ -279,12 +283,18 @@ export default function LostAndFound() {
                     </div>
                     
                     {report.type === 'found' && (
-                       <button 
-                         onClick={() => setClaimModal(report)}
-                         className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
-                       >
-                         🙋 Claim This Item
-                       </button>
+                       user?.role === 'Admin' ? (
+                        <div className="w-full mt-2 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400 font-medium text-center">
+                           Admin restricted from claiming items
+                        </div>
+                       ) : (
+                        <button 
+                          onClick={() => setClaimModal(report)}
+                          className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
+                        >
+                          🙋 Claim This Item
+                        </button>
+                       )
                     )}
                   </div>
                 </div>

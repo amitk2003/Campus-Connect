@@ -251,12 +251,14 @@ export default function Marketplace() {
           >
             <ShoppingBag className="inline w-4 h-4 mr-2"/> Browse
           </button>
-          <button 
-            onClick={() => setActiveTab('sell')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'sell' ? 'bg-white dark:bg-slate-700 shadow-sm text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
-          >
-            <Tag className="inline w-4 h-4 mr-2"/> Sell an Item
-          </button>
+          {user?.role !== 'Admin' && (
+            <button 
+              onClick={() => setActiveTab('sell')}
+              className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'sell' ? 'bg-white dark:bg-slate-700 shadow-sm text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
+            >
+              <Tag className="inline w-4 h-4 mr-2"/> Sell an Item
+            </button>
+          )}
         </div>
       </div>
 
@@ -351,7 +353,11 @@ export default function Marketplace() {
                       </div>
                     )}
                     
-                    {user && user.id === item.seller_id ? (
+                    {user && user.role === 'Admin' ? (
+                       <div className="w-full mt-2 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400 font-medium text-center">
+                         Admin restricted from marketplace interactions
+                       </div>
+                    ) : user && user.id === item.seller_id ? (
                       <div className="flex gap-2 w-full mt-2">
                          <button 
                             onClick={() => handleEdit(item)}
