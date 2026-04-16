@@ -15,14 +15,8 @@ STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_mock")
 stripe.api_key = STRIPE_SECRET_KEY
 
 def calculate_claim_fee(item_value):
-    if item_value <= 200:
-        return 0
-    elif item_value <= 500:
-        return 5
-    else:
-        # Every 1000 interval after 500 adds 5 rupees.
-        # e.g., 501-1500=10, 1501-2500=15
-        return 5 + 5 * math.ceil((item_value - 500) / 1000)
+    # Set to 0 for MVP to encourage community growth
+    return 0
 
 reports_collection = db['Reports']
 claims_collection = db['Claims']

@@ -30,6 +30,18 @@ export default function Marketplace() {
   // Payment modal
   const [paymentModal, setPaymentModal] = useState(null); // item object or null
 
+  const calculateFee = (price, category) => {
+    const p = parseFloat(price || 0);
+    const cat = (category || '').toLowerCase();
+    
+    if (cat.includes('book')) return Math.round(p * 0.03);
+    if (cat.includes('electronic')) return Math.round(p * 0.12);
+    
+    if (p <= 2000) return Math.round(p * 0.05);
+    if (p <= 5000) return Math.round(p * 0.08);
+    return Math.round(p * 0.10);
+  };
+
   useEffect(() => {
     if (activeTab === 'browse') {
       fetchItems();
@@ -228,9 +240,9 @@ export default function Marketplace() {
     }
   };
 
-  const itemPrice = paymentModal ? parseFloat(paymentModal.price) : 0;
-  const platformFee = paymentModal ? Math.round(itemPrice * 0.05 * 100) / 100 : 0;
-  const totalAmount = itemPrice + platformFee;
+   const itemPrice = paymentModal ? parseFloat(paymentModal.price) : 0;
+   const platformFee = paymentModal ? calculateFee(itemPrice, paymentModal.category) : 0;
+   const totalAmount = itemPrice + platformFee;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-in fade-in zoom-in duration-500">
@@ -338,7 +350,7 @@ export default function Marketplace() {
                        <IndianRupee className="w-5 h-5 mr-1 text-slate-400" />
                        {item.price}
                     </div>
-                    <div className="text-xs text-slate-400 mb-3">+ ₹{Math.round(item.price * 0.05)} platform fee</div>
+                    <div className="text-xs text-slate-400 mb-3">+ ₹{calculateFee(item.price, item.category)} platform fee</div>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 line-clamp-2 flex-grow">
                        {item.description || "No description provided."}
                     </p>
@@ -435,13 +447,17 @@ export default function Marketplace() {
 
 
             {formData.price && (
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 text-sm">
-                <div className="flex justify-between mb-1"><span className="text-slate-600 dark:text-slate-400">Your price:</span> <span className="font-bold">₹{formData.price}</span></div>
-                <div className="flex justify-between mb-1"><span className="text-slate-600 dark:text-slate-400">Platform fee (5%):</span> <span className="font-bold text-purple-600">₹{Math.round(parseFloat(formData.price || 0) * 0.05)}</span></div>
-                <hr className="border-purple-200 dark:border-purple-800 my-2"/>
-                <div className="flex justify-between"><span className="font-semibold">Buyer pays:</span> <span className="font-extrabold text-purple-700 dark:text-purple-400">₹{parseFloat(formData.price || 0) + Math.round(parseFloat(formData.price || 0) * 0.05)}</span></div>
+              <>
+                 <div className="flex justify-between mb-1"><span className="text-slate-600 dark:text-slate-400">Your price:</span> <span className="font-bold">₹{formData.price}</span></div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-600 dark:text-slate-400">Platform fee ({formData.category.includes('Book') ? '3%' : formData.category.includes('Elect') ? '12%' : formData.price <= 2000 ? '5%' : formData.price <= 5000 ? '8%' : '10%'}):</span> 
+                  <span className="font-bold text-purple-600">₹{calculateFee(formData.price, formData.category)}</span>
+                </div>
+                 <hr className="border-purple-200 dark:border-purple-800 my-2"/>
+                 <div className="flex justify-between"><span className="font-semibold">Buyer pays:</span> <span className="font-extrabold text-purple-700 dark:text-purple-400">₹{parseFloat(formData.price || 0) + calculateFee(formData.price, formData.category)}</span></div>
                 <p className="text-xs text-slate-400 mt-2">You receive ₹{formData.price}. Platform keeps the fee.</p>
-              </div>
+              
+             </>
             )}
 
             <button type="submit" className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 transition-all hover:-translate-y-1">
@@ -486,7 +502,7 @@ export default function Marketplace() {
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700"/>
                   <div className="flex justify-between text-sm"><span className="text-slate-500">Item Price</span><span className="font-medium">₹{itemPrice}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-slate-500">Platform Fee (5%)</span><span className="font-medium text-purple-600">₹{platformFee}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Platform Fee</span><span className="font-medium text-purple-600">₹{platformFee}</span></div>
                   <hr className="border-slate-200 dark:border-slate-700"/>
                   <div className="flex justify-between text-base"><span className="font-bold">Total</span><span className="font-extrabold text-lg text-purple-700 dark:text-purple-400">₹{totalAmount}</span></div>
                 </div>

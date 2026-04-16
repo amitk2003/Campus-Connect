@@ -12,7 +12,31 @@ marketplace_collection = db['MarketplaceItems']
 transactions_collection = db['Transactions']
 payments_collection = db['Payments']
 
-PLATFORM_FEE_PERCENT = 5  # 5% platform fee
+def calculate_marketplace_fee(price, category):
+    """
+    Business Model:
+    1. Category Based:
+       - Books: 3% (Low)
+       - Electronics: 12% (High)
+    2. Price Based (for others):
+       - 0 to 2000: 5%
+       - 2000 to 5000: 8%
+       - Above 5000: 10%
+    """
+    cat_lower = str(category).lower()
+    
+    if 'book' in cat_lower:
+        return round(price * 0.03, 2)
+    elif 'electronic' in cat_lower:
+        return round(price * 0.12, 2)
+    
+    # Tiered pricing for other categories
+    if price <= 2000:
+        return round(price * 0.05, 2)
+    elif price <= 5000:
+        return round(price * 0.08, 2)
+    else:
+        return round(price * 0.10, 2)
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_mock")
 stripe.api_key = STRIPE_SECRET_KEY
@@ -145,7 +169,8 @@ def buy_item(item_id):
             return jsonify({"message": "You cannot buy your own item"}), 400
 
         item_price = float(item["price"])
-        platform_fee = round(item_price * PLATFORM_FEE_PERCENT / 100, 2)
+        item_category = item.get("category", "General")
+        platform_fee = calculate_marketplace_fee(item_price, item_category)
         total_amount = item_price + platform_fee
         order_amount_paise = int(total_amount * 100)
 
