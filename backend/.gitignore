@@ -4,4 +4,6 @@
 __pycache__
 1.txt
 userdata.txt
+.env
+*.log
 
