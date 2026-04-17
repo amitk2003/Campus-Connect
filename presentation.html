@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CampusConnect — Startup 101 Presentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --purple: #7c3aed;
+      --indigo: #4f46e5;
+      --pink: #ec4899;
+      --dark: #0f0f1a;
+      --card: rgba(255,255,255,0.05);
+      --glass: rgba(255,255,255,0.08);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Inter', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Slides container ── */
+    .slides { width:100%; height:100vh; position:relative; }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px 64px;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: all 0.55s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ── Backgrounds per slide ── */
+    .bg-hero    { background: radial-gradient(ellipse at 30% 40%, #4f46e520 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, #7c3aed20 0%, transparent 60%), linear-gradient(135deg, #0f0f1a 0%, #1a0533 100%); }
+    .bg-problem { background: radial-gradient(ellipse at 20% 50%, #dc262620 0%, transparent 60%), linear-gradient(135deg, #0f0f1a 0%, #1a0a0a 100%); }
+    .bg-solution{ background: radial-gradient(ellipse at 60% 30%, #06b6d420 0%, transparent 60%), linear-gradient(135deg, #0f0f1a 0%, #031a1a 100%); }
+    .bg-arch    { background: radial-gradient(ellipse at 50% 50%, #4f46e515 0%, transparent 70%), linear-gradient(135deg, #0a0a1a 0%, #0f0f2a 100%); }
+    .bg-roles   { background: radial-gradient(ellipse at 30% 60%, #16a34a15 0%, transparent 60%), linear-gradient(135deg, #0a1a0a 0%, #0f1a0f 100%); }
+    .bg-market  { background: radial-gradient(ellipse at 70% 40%, #d97706 20 0%, transparent 60%), linear-gradient(135deg, #1a0f00 0%, #0f0f1a 100%); }
+    .bg-biz     { background: radial-gradient(ellipse at 40% 60%, #7c3aed20 0%, transparent 60%), linear-gradient(135deg, #0f0a1a 0%, #0f0f1a 100%); }
+    .bg-lnf     { background: radial-gradient(ellipse at 60% 40%, #ec489920 0%, transparent 60%), linear-gradient(135deg, #1a0a0f 0%, #0f0f1a 100%); }
+    .bg-admin   { background: radial-gradient(ellipse at 30% 30%, #0ea5e920 0%, transparent 60%), linear-gradient(135deg, #001a2a 0%, #0f0f1a 100%); }
+    .bg-mvp     { background: radial-gradient(ellipse at 50% 50%, #16a34a20 0%, transparent 60%), linear-gradient(135deg, #001a0a 0%, #0f0f1a 100%); }
+    .bg-status  { background: radial-gradient(ellipse at 60% 40%, #7c3aed30 0%, transparent 60%), linear-gradient(135deg, #0f0a1a 0%, #1a0535 100%); }
+    .bg-end     { background: radial-gradient(ellipse at 50% 50%, #4f46e530 0%, transparent 60%), linear-gradient(135deg, #0f0f1a 0%, #1a0533 100%); }
+
+    /* ── Typography ── */
+    .chip {
+      display: inline-block;
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 6px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--purple);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      backdrop-filter: blur(8px);
+    }
+    h1.hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(52px, 8vw, 96px);
+      font-weight: 900;
+      line-height: 1.05;
+      background: linear-gradient(135deg, #fff 0%, #c4b5fd 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h2.slide-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(32px, 5vw, 60px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-pink {
+      background: linear-gradient(135deg, #f472b6, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gradient-green {
+      background: linear-gradient(135deg, #4ade80, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.hero-sub {
+      font-size: clamp(16px, 2vw, 22px);
+      color: var(--muted);
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    /* ── Cards / Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 900px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; max-width: 1000px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; max-width: 1100px; }
+    .card {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: rgba(124, 58, 237, 0.4); }
+    .card .icon { font-size: 32px; margin-bottom: 12px; }
+    .card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th { background: rgba(124,58,237,0.2); color: #c4b5fd; font-weight: 700; padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); color: var(--muted); vertical-align: middle; }
+    td strong { color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    .table-wrap { width: 100%; max-width: 900px; background: var(--glass); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+    .badge-purple { background: rgba(124,58,237,0.2); color: #c4b5fd; }
+    .badge-green  { background: rgba(22,163,74,0.2);  color: #4ade80; }
+    .badge-red    { background: rgba(239,68,68,0.2);  color: #f87171; }
+    .badge-blue   { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-orange { background: rgba(249,115,22,0.2); color: #fb923c; }
+
+    /* ── Quote block ── */
+    .quote {
+      border-left: 3px solid var(--purple);
+      padding: 16px 24px;
+      background: var(--glass);
+      border-radius: 0 12px 12px 0;
+      font-style: italic;
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 720px;
+      margin: 16px 0;
+    }
+    .quote strong { color: #c4b5fd; font-style: normal; }
+
+    /* ── Flow steps ── */
+    .steps { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .step-item {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .step-arrow { color: var(--purple); font-size: 22px; font-weight: 900; }
+
+    /* ── Navigation ── */
+    .nav {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(15,15,26,0.8);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 12px 24px;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+    .nav button {
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 22px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .nav button:hover { background: rgba(255,255,255,0.1); }
+    .nav button:disabled { color: var(--muted); cursor: default; }
+    #slide-counter { font-size: 14px; color: var(--muted); min-width: 60px; text-align: center; }
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+      transition: width 0.4s ease;
+      z-index: 200;
+    }
+
+    /* ── Slide-specific ── */
+    .hero-tags { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .hero-tag {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .big-stat { text-align: center; }
+    .big-stat .number { font-family: 'Outfit', sans-serif; font-size: 64px; font-weight: 900; line-height: 1; }
+    .big-stat .label  { font-size: 15px; color: var(--muted); margin-top: 6px; }
+    .pain-row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+    .pain-icon { font-size: 28px; flex-shrink: 0; }
+    .pain-text h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .pain-text p  { font-size: 14px; color: var(--muted); }
+    .arch-box {
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 20px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--glass);
+    }
+    .arch-connector { text-align: center; color: var(--purple); font-size: 18px; }
+    .flow-diagram { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 800px; }
+    .tag-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+    .tag {
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .fee-bar { display: flex; align-items: center; gap: 12px; margin: 6px 0; }
+    .fee-label { width: 140px; font-size: 14px; color: var(--muted); }
+    .fee-track { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+    .fee-fill   { height: 100%; border-radius: 99px; }
+    .fee-pct    { font-size: 14px; font-weight: 700; width: 40px; text-align: right; }
+    .status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; flex-shrink: 0; box-shadow: 0 0 8px #4ade80; }
+    .status-label { font-size: 15px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div class="slides" id="slides">
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 1 — HERO
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-hero active" id="slide-1">
+    <div class="chip">🎓 Startup 101 · MVP v3 · April 2026</div>
+    <h1 class="hero-title">Campus<br/>Connect</h1>
+    <p class="hero-sub">A peer-to-peer anonymous digital marketplace & AI-powered Lost and Found platform — built exclusively for university campuses.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">🛒 Marketplace</span>
+      <span class="hero-tag">🔍 AI Lost & Found</span>
+      <span class="hero-tag">🛡️ Role-Based</span>
+      <span class="hero-tag">💳 Stripe Payments</span>
+      <span class="hero-tag">👤 Anonymous</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 2 — PROBLEM
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-problem" id="slide-2">
+    <div class="chip">🔥 The Problem</div>
+    <h2 class="slide-title">Campus trading is <span class="gradient-pink">broken</span></h2>
+    <div style="display:flex; gap:48px; max-width: 900px; width:100%;">
+      <div style="flex:1;">
+        <div class="pain-row">
+          <div class="pain-icon">📱</div>
+          <div class="pain-text"><h4>WhatsApp Chaos</h4><p>Lost & sale messages are buried within hours. No structure, no history.</p></div>
+        </div>
+        <div class="pain-row">
+          <div class="pain-icon">🎭</div>
+          <div class="pain-text"><h4>No Privacy</h4><p>Real identities exposed in every transaction — safety & trust concern.</p></div>
+        </div>
+        <div class="pain-row">
+          <div class="pain-icon">💸</div>
+          <div class="pain-text"><h4>No Payment Safety</h4><p>Cash or UPI only — no verification, high scam risk for students.</p></div>
+        </div>
+        <div class="pain-row">
+          <div class="pain-icon">🔎</div>
+          <div class="pain-text"><h4>Lost Objects Never Recovered</h4><p>Manual notice boards are slow, unreliable, and not searchable.</p></div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap: 16px;">
+        <div class="quote">"When someone's hair is on fire, they'll take a brick if it helps."<br/><strong>— Paul Graham, YC</strong></div>
+        <div style="background: rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:16px; padding: 20px;">
+          <p style="font-size:14px; color:#f87171; font-weight:700; margin-bottom:12px;">REAL CAMPUS MOMENTS:</p>
+          <p style="font-size:14px; color:var(--muted); margin-bottom:8px;">😰 "I lost my wallet before exams and can't reach anyone"</p>
+          <p style="font-size:14px; color:var(--muted);">📦 "I'm leaving campus Friday — need to sell everything NOW"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 3 — SOLUTION
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-solution" id="slide-3">
+    <div class="chip">💡 Our Solution</div>
+    <h2 class="slide-title">One platform. <span class="gradient-text">Everything campus.</span></h2>
+    <div class="grid-3" style="max-width: 900px;">
+      <div class="card">
+        <div class="icon">🛒</div>
+        <h3>Anonymous Marketplace</h3>
+        <p>Buy & sell items with unique anonymous handles. Neither buyer nor seller knows each other's real identity.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔍</div>
+        <h3>AI Lost & Found</h3>
+        <p>TF-IDF text + OpenCV image matching auto-connects lost reports with found items in real-time.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🛡️</div>
+        <h3>Admin Dashboard</h3>
+        <p>Real-time analytics, revenue tracking, dispute resolution — all isolated from marketplace activity.</p>
+      </div>
+    </div>
+    <div class="quote" style="margin-top: 28px; max-width:700px;">"Unlike Rapido & Zomato — CampusConnect is <strong>two-way anonymous</strong>. The platform itself is the trusted third party."</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 4 — TECH STACK
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-arch" id="slide-4">
+    <div class="chip">🏗️ Architecture</div>
+    <h2 class="slide-title">Full-Stack <span class="gradient-text">Tech Stack</span></h2>
+    <div style="display:flex; gap: 32px; align-items:flex-start; max-width: 980px; width:100%;">
+      <div style="flex:1;" class="flow-diagram">
+        <div class="arch-box" style="border-color: rgba(99,102,241,0.4);">⚛️ <strong>Frontend</strong> — React.js + Vite + Tailwind CSS</div>
+        <div class="arch-connector">↕ Axios REST API</div>
+        <div class="arch-box" style="border-color: rgba(124,58,237,0.4);">🐍 <strong>Backend</strong> — Python Flask + JWT Auth + Gunicorn</div>
+        <div class="arch-connector">↕ ↕</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="arch-box" style="border-color: rgba(22,163,74,0.4);">🍃 MongoDB Atlas</div>
+          <div class="arch-box" style="border-color: rgba(99,102,241,0.4);">💳 Stripe API</div>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="table-wrap">
+          <table>
+            <tr><th>Layer</th><th>Technology</th></tr>
+            <tr><td>Frontend</td><td><strong>React, Vite, Tailwind</strong></td></tr>
+            <tr><td>Backend</td><td><strong>Flask, JWT, Bcrypt</strong></td></tr>
+            <tr><td>Database</td><td><strong>MongoDB Atlas</strong></td></tr>
+            <tr><td>Auth</td><td><strong>JWT + Google OAuth 2.0</strong></td></tr>
+            <tr><td>Payments</td><td><strong>Stripe Checkout</strong></td></tr>
+            <tr><td>AI Engine</td><td><strong>TF-IDF + OpenCV</strong></td></tr>
+            <tr><td>Deploy</td><td><strong>Gunicorn + Render</strong></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 5 — USER ROLES
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-roles" id="slide-5">
+    <div class="chip">👥 User Roles</div>
+    <h2 class="slide-title">3 Distinct <span class="gradient-green">Roles</span></h2>
+    <div class="grid-3" style="max-width:960px;">
+      <div class="card" style="border-color: rgba(99,102,241,0.3);">
+        <div class="icon">🎓</div>
+        <h3>Student</h3>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Login via Email or Google</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">List & Buy marketplace items</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Report Lost & Claim Found</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Anonymous handle (User#ABC12)</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Secure Stripe checkout</span></div>
+        </div>
+      </div>
+      <div class="card" style="border-color: rgba(16,185,129,0.3);">
+        <div class="icon">🏫</div>
+        <h3>Alumni</h3>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Same access as Student</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Separate role badge</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Access via email/Google</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Anonymous identity enforced</span></div>
+        </div>
+      </div>
+      <div class="card" style="border-color: rgba(239,68,68,0.3);">
+        <div class="icon">⚙️</div>
+        <h3>Admin</h3>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Full dashboard access</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Sees real names for disputes</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#4ade80;">✓</span> <span style="font-size:14px; color:var(--muted);">Revenue & analytics view</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#f87171;">✗</span> <span style="font-size:14px; color:var(--muted);">Cannot buy/sell/claim</span></div>
+          <div style="display:flex; align-items:center; gap:8px;"><span style="color:#f87171;">✗</span> <span style="font-size:14px; color:var(--muted);">Platform neutrality enforced</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="quote" style="margin-top:24px;">"Admin isolation enforced on <strong>both frontend components AND every backend route</strong> — double security layer."</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 6 — MARKETPLACE FLOW
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-market" id="slide-6">
+    <div class="chip">🛒 Marketplace</div>
+    <h2 class="slide-title">How the <span style="background:linear-gradient(135deg,#fb923c,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Marketplace</span> Works</h2>
+    <div style="display:flex; gap:40px; max-width:960px; width:100%; align-items:flex-start;">
+      <div style="flex:1;">
+        <p style="font-size:13px; font-weight:700; color:#fb923c; text-transform:uppercase; letter-spacing:.06em; margin-bottom:16px;">Seller Flow</p>
+        <div class="steps" style="flex-direction:column; align-items:flex-start;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fb923c;">1</div><span style="font-size:14px;">Enter item name, category, condition, price</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fb923c;">2</div><span style="font-size:14px;">Upload image (stored securely)</span></div>
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fb923c;">3</div><span style="font-size:14px;">Item listed with anonymous name</span></div>
+          <div style="display:flex; align-items:center; gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(251,146,60,0.2);border:1px solid rgba(251,146,60,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fb923c;">4</div><span style="font-size:14px;">Can edit/delete anytime</span></div>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <p style="font-size:13px; font-weight:700; color:#60a5fa; text-transform:uppercase; letter-spacing:.06em; margin-bottom:16px;">Buyer Flow</p>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#60a5fa;">1</div><span style="font-size:14px;">Browse, search, filter by price & category</span></div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#60a5fa;">2</div><span style="font-size:14px;">Click "Buy Now" → see price + fee breakdown</span></div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#60a5fa;">3</div><span style="font-size:14px;">Redirect to Stripe Checkout</span></div>
+        <div style="display:flex; align-items:center; gap:12px;"><div style="width:28px;height:28px;border-radius:50%;background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#60a5fa;">4</div><span style="font-size:14px;">Item marked "Sold" → Admin dashboard updated</span></div>
+      </div>
+      <div style="flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px;">
+        <p style="font-size:13px; font-weight:700; color:#4ade80; margin-bottom:14px;">WHO BENEFITS?</p>
+        <div style="margin-bottom: 12px;"><span style="font-size:22px;">💼</span> <strong style="font-size:14px;"> Seller</strong><p style="font-size:13px; color:var(--muted); margin-top:4px;">Gets full listed price</p></div>
+        <div style="margin-bottom: 12px;"><span style="font-size:22px;">🛒</span> <strong style="font-size:14px;"> Buyer</strong><p style="font-size:13px; color:var(--muted); margin-top:4px;">Gets verified item + safe tx</p></div>
+        <div><span style="font-size:22px;">🏛️</span> <strong style="font-size:14px;"> Platform</strong><p style="font-size:13px; color:var(--muted); margin-top:4px;">Earns % fee per transaction</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 7 — BUSINESS MODEL
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-biz" id="slide-7">
+    <div class="chip">💰 Business Model</div>
+    <h2 class="slide-title">Tiered <span class="gradient-text">Fee Structure</span></h2>
+    <div style="display:flex; gap:40px; max-width: 960px; width:100%; align-items:flex-start;">
+      <div style="flex:1;">
+        <p style="font-size:13px; color:var(--muted); margin-bottom:20px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Category-Based (Priority)</p>
+        <div class="fee-bar">
+          <div class="fee-label">📚 Books</div>
+          <div class="fee-track"><div class="fee-fill" style="width:25%; background:linear-gradient(90deg,#4ade80,#34d399);"></div></div>
+          <div class="fee-pct" style="color:#4ade80;">3%</div>
+        </div>
+        <div class="fee-bar">
+          <div class="fee-label">💻 Electronics</div>
+          <div class="fee-track"><div class="fee-fill" style="width:100%; background:linear-gradient(90deg,#f87171,#fb923c);"></div></div>
+          <div class="fee-pct" style="color:#f87171;">12%</div>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-top:24px; margin-bottom:16px; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Price-Based (Others)</p>
+        <div class="fee-bar">
+          <div class="fee-label">₹0 – ₹2,000</div>
+          <div class="fee-track"><div class="fee-fill" style="width:41%; background:linear-gradient(90deg,#60a5fa,#818cf8);"></div></div>
+          <div class="fee-pct" style="color:#60a5fa;">5%</div>
+        </div>
+        <div class="fee-bar">
+          <div class="fee-label">₹2k – ₹5k</div>
+          <div class="fee-track"><div class="fee-fill" style="width:66%; background:linear-gradient(90deg,#a78bfa,#8b5cf6);"></div></div>
+          <div class="fee-pct" style="color:#a78bfa;">8%</div>
+        </div>
+        <div class="fee-bar">
+          <div class="fee-label">₹5,000+</div>
+          <div class="fee-track"><div class="fee-fill" style="width:83%; background:linear-gradient(90deg,#c084fc,#e879f9);"></div></div>
+          <div class="fee-pct" style="color:#c084fc;">10%</div>
+        </div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:16px;">
+        <div class="card" style="border-color: rgba(74,222,128,0.3);">
+          <div class="icon">🔍</div>
+          <h3 style="color:#4ade80;">Lost & Found: FREE</h3>
+          <p>No charge for claiming lost items. Removes friction vs. WhatsApp and builds community trust first → drives organic growth.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:16px;">
+          <p style="font-size:13px; font-weight:700; color:#c4b5fd; margin-bottom:10px;">REVENUE EXAMPLE</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:13px; color:var(--muted);">Book ₹300</span><span style="font-size:13px; font-weight:700; color:#4ade80;">+₹9</span></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:13px; color:var(--muted);">Laptop ₹25,000</span><span style="font-size:13px; font-weight:700; color:#f87171;">+₹3,000</span></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:13px; color:var(--muted);">Cycle ₹5,500</span><span style="font-size:13px; font-weight:700; color:#c084fc;">+₹550</span></div>
+          <div style="display:flex; justify-content:space-between; align-items:center;"><span style="font-size:13px; color:var(--muted);">Study Table ₹1,800</span><span style="font-size:13px; font-weight:700; color:#60a5fa;">+₹90</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 8 — LOST & FOUND AI
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-lnf" id="slide-8">
+    <div class="chip">🤖 AI Lost & Found</div>
+    <h2 class="slide-title">Smart <span class="gradient-pink">Matching Engine</span></h2>
+    <div style="display:flex; gap:40px; max-width:960px; width:100%; align-items:flex-start;">
+      <div style="flex:1; display:flex; flex-direction:column; gap:14px;">
+        <div class="card" style="border-color: rgba(236,72,153,0.3);">
+          <div style="font-size:20px; margin-bottom:8px;">📝</div>
+          <h3>TF-IDF Text Similarity</h3>
+          <p>Compares descriptions word-by-word using cosine similarity to find textually matching items.</p>
+        </div>
+        <div class="card" style="border-color: rgba(236,72,153,0.3);">
+          <div style="font-size:20px; margin-bottom:8px;">🖼️</div>
+          <h3>OpenCV Image Hashing</h3>
+          <p>Computes perceptual hash of uploaded images to detect visually similar items, even with minor edits.</p>
+        </div>
+        <div class="card" style="border-color: rgba(236,72,153,0.3);">
+          <div style="font-size:20px; margin-bottom:8px;">🎯</div>
+          <h3>Category & Name Bonus</h3>
+          <p>+15% score for same category; +20% if item names are substrings of each other.</p>
+        </div>
+      </div>
+      <div style="flex:1.2;">
+        <div style="background:var(--glass); border:1px solid rgba(236,72,153,0.2); border-radius:16px; padding:24px;">
+          <p style="font-size:13px; font-weight:700; color:#f472b6; margin-bottom:16px; text-transform:uppercase; letter-spacing:.05em;">COMBINED SCORE FORMULA</p>
+          <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:16px; font-family:monospace; font-size:14px; color:#c4b5fd; line-height:1.8;">
+            <span style="color:#f472b6;">With Images:</span><br/>
+            Score = Text×0.40 + Image×0.35 + Bonus×0.25<br/><br/>
+            <span style="color:#f472b6;">Without Images:</span><br/>
+            Score = Text×0.70 + Bonus×0.30<br/><br/>
+            <span style="color:#4ade80;">MATCH if Score > 0.25</span>
+          </div>
+          <div style="margin-top:20px;">
+            <p style="font-size:13px; font-weight:700; color:#f472b6; margin-bottom:12px;">CLAIM PROCESS</p>
+            <div class="steps" style="flex-direction:column; align-items:flex-start;">
+              <div style="font-size:14px; margin-bottom:8px;">1️⃣ &nbsp;Report lost item → AI scans all "Found" reports</div>
+              <div style="font-size:14px; margin-bottom:8px;">2️⃣ &nbsp;Matched items shown ranked by score</div>
+              <div style="font-size:14px; margin-bottom:8px;">3️⃣ &nbsp;Claimer submits proof of ownership</div>
+              <div style="font-size:14px; margin-bottom:8px;">4️⃣ &nbsp;Admin verifies & approves the claim</div>
+              <div style="font-size:14px;">5️⃣ &nbsp;Item marked <span style="color:#4ade80; font-weight:700;">Resolved</span> ✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 9 — ADMIN DASHBOARD
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-admin" id="slide-9">
+    <div class="chip">📊 Admin Dashboard</div>
+    <h2 class="slide-title">Platform <span class="gradient-text">Control Room</span></h2>
+    <div class="grid-4" style="max-width:1000px;">
+      <div class="card" style="border-color:rgba(250,204,21,0.3); text-align:center;">
+        <div class="icon">👥</div>
+        <h3 style="font-size:14px;">Total Users</h3>
+        <p>All registered Students & Alumni</p>
+      </div>
+      <div class="card" style="border-color:rgba(74,222,128,0.3); text-align:center;">
+        <div class="icon">💰</div>
+        <h3 style="font-size:14px;">Platform Revenue</h3>
+        <p>Net earnings from all marketplace fees</p>
+      </div>
+      <div class="card" style="border-color:rgba(96,165,250,0.3); text-align:center;">
+        <div class="icon">📦</div>
+        <h3 style="font-size:14px;">Items Sold</h3>
+        <p>Complete transaction history log</p>
+      </div>
+      <div class="card" style="border-color:rgba(236,72,153,0.3); text-align:center;">
+        <div class="icon">🔎</div>
+        <h3 style="font-size:14px;">Lost Reports</h3>
+        <p>Open & Resolved report counts</p>
+      </div>
+      <div class="card" style="border-color:rgba(251,146,60,0.3); text-align:center;">
+        <div class="icon">✅</div>
+        <h3 style="font-size:14px;">Found Reports</h3>
+        <p>All submitted found item reports</p>
+      </div>
+      <div class="card" style="border-color:rgba(167,139,250,0.3); text-align:center;">
+        <div class="icon">🤝</div>
+        <h3 style="font-size:14px;">Claims</h3>
+        <p>Pending / Approved / Rejected</p>
+      </div>
+      <div class="card" style="border-color:rgba(34,211,238,0.3); text-align:center;">
+        <div class="icon">📋</div>
+        <h3 style="font-size:14px;">Transactions</h3>
+        <p>Full buyer-seller payment log</p>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,0.3); text-align:center;">
+        <div class="icon">🛡️</div>
+        <h3 style="font-size:14px;">Role Isolated</h3>
+        <p>Cannot buy, sell, or claim items</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 10 — MVP ITERATIONS
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-mvp" id="slide-10">
+    <div class="chip">🔄 Build → Measure → Learn</div>
+    <h2 class="slide-title">MVP Iterations <span class="gradient-green">& Pivots</span></h2>
+    <div style="display:flex; gap:32px; max-width:960px; width:100%;">
+      <div class="table-wrap" style="flex:2;">
+        <table>
+          <tr><th>Version</th><th>Hypothesis</th><th>Insight</th><th>Pivot</th></tr>
+          <tr>
+            <td><span class="badge badge-blue">v1</span></td>
+            <td><strong>Flat 5% fee on all</strong></td>
+            <td style="color:var(--muted);">Users didn't differentiate</td>
+            <td>Kept as baseline</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-orange">v2</span></td>
+            <td><strong>L&F claim fee</strong></td>
+            <td style="color:var(--muted);">Users chose WhatsApp (free)</td>
+            <td>Fee blocked adoption</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">v3</span></td>
+            <td><strong>L&F = FREE</strong></td>
+            <td style="color:var(--muted);">Community trust metric</td>
+            <td>→ 0% fee on L&F ✓</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">v3</span></td>
+            <td><strong>Category + Tiered ₹</strong></td>
+            <td style="color:var(--muted);">Electronics = higher margin</td>
+            <td>→ Books 3%, Elec 12% ✓</td>
+          </tr>
+        </table>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:14px;">
+        <div class="quote">"If you're not embarrassed by the first version of your product, you've launched too late."<br/><strong>— Reid Hoffman, LinkedIn</strong></div>
+        <div style="background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.2); border-radius:12px; padding:16px;">
+          <p style="font-size:13px; font-weight:700; color:#4ade80; margin-bottom:8px;">YC PRINCIPLE APPLIED ✓</p>
+          <p style="font-size:13px; color:var(--muted);">Like <strong style="color:var(--text);">FR8</strong>, we identified information asymmetry — WhatsApp = 30%+ lost deals due to message burial &amp; lack of structure. CampusConnect = the broker-free orchestration layer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 11 — STATUS
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-status" id="slide-11">
+    <div class="chip">✅ Platform Status</div>
+    <h2 class="slide-title">MVP v3 is <span class="gradient-text">Production Ready</span></h2>
+    <div style="display:flex; gap:40px; max-width:900px; width:100%;">
+      <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Email + Google OAuth Login</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Anonymous Handle Assignment</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Marketplace (List / Browse / Buy)</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Stripe Payment Integration</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Tiered + Category Fee Engine</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Lost & Found Reporting (FREE)</div></div>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">AI Smart Matching (Text+Image)</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Verified Claim Workflow</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Admin Dashboard (Live Analytics)</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Admin Role Isolation (Backend+UI)</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Password Reset via Email</div></div>
+        <div class="status-row"><div class="status-dot"></div><div class="status-label">Gunicorn Production Deploy</div></div>
+      </div>
+    </div>
+    <div class="tag-row" style="margin-top:24px;">
+      <span class="tag">🔮 In-App Chat</span>
+      <span class="tag">⭐ Reputation System</span>
+      <span class="tag">📱 Mobile App</span>
+      <span class="tag">🔔 Push Notifications</span>
+      <span class="tag">🏫 Campus Partnerships</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SLIDE 12 — CLOSING
+  ═══════════════════════════════════════════════════ -->
+  <div class="slide bg-end" id="slide-12">
+    <div class="chip">🎓 Thank You</div>
+    <h1 class="hero-title">Campus<br/>Connect</h1>
+    <p class="hero-sub">Built with the Y Combinator philosophy:<br/><strong style="color:#c4b5fd;">Launch fast. Iterate constantly. Listen to users.</strong></p>
+    <div class="grid-3" style="max-width:720px; margin-top:16px;">
+      <div style="text-align:center; padding:16px;">
+        <div style="font-size:36px; margin-bottom:8px;">🛒</div>
+        <div style="font-size:14px; font-weight:700;">Peer-to-Peer<br/>Marketplace</div>
+      </div>
+      <div style="text-align:center; padding:16px;">
+        <div style="font-size:36px; margin-bottom:8px;">🤖</div>
+        <div style="font-size:14px; font-weight:700;">AI Lost &<br/>Found Recovery</div>
+      </div>
+      <div style="text-align:center; padding:16px;">
+        <div style="font-size:36px; margin-bottom:8px;">💰</div>
+        <div style="font-size:14px; font-weight:700;">Smart Tiered<br/>Business Model</div>
+      </div>
+    </div>
+    <div style="margin-top:28px; padding: 16px 32px; background: rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); border-radius: 12px;">
+      <p style="font-size:14px; color:var(--muted); text-align:center;">Built at <strong style="color:var(--text);">IIIT Sricity</strong> · MVP v3 · Startup 101 Submission · April 2026</p>
+    </div>
+  </div>
+
+</div><!-- /slides -->
+
+<!-- ── Navigation Controls ── -->
+<div class="nav">
+  <button id="btn-prev" onclick="changeSlide(-1)" title="Previous (←)">‹</button>
+  <span id="slide-counter">1 / 12</span>
+  <button id="btn-next" onclick="changeSlide(1)" title="Next (→)">›</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  const counter = document.getElementById('slide-counter');
+  const bar     = document.getElementById('progress-bar');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+
+  function updateUI() {
+    counter.textContent = `${current + 1} / ${total}`;
+    bar.style.width = `${((current + 1) / total) * 100}%`;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+  }
+
+  function changeSlide(dir) {
+    const newIdx = current + dir;
+    if (newIdx < 0 || newIdx >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current].classList.remove('exit'), 550);
+    current = newIdx;
+    slides[current].classList.add('active');
+    updateUI();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); changeSlide(-1); }
+  });
+
+  // Touch / swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend',   e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1);
+  });
+
+  updateUI();
+</script>
+</body>
+</html>
