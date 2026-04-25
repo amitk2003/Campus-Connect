@@ -29,7 +29,7 @@ app.json = CustomJSONProvider(app)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": {"http://localhost:5173","https://campus-connect-coral-tau.vercel.app/"}, }},
+    resources={r"/api/*": {"origins": ["http://localhost:5173","https://campus-connect-coral-tau.vercel.app"], }},
     allow_headers=["Content-Type", "Authorization"],
     supports_credentials=True
 )
