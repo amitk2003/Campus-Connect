@@ -229,7 +229,7 @@ function FeatureCard({ icon, title, desc, delay }) {
       }}
       className="dark:bg-slate-800 dark:border-slate-700 group hover:-translate-y-1 hover:shadow-lg transition-[transform,box-shadow] duration-300"
     >
-      <div className="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-2xl bg-slate-50 dark:bg-slate-700 group-hover:scale-110 transition-transform duration-300">
+      <div className="w-12 h-12 mb-4 rounded-xl flex items-center justify-center text-2xl bg-zinc-600dark:bg-slate-700 group-hover:scale-110 transition-transform duration-300">
         {icon}
       </div>
       <div className="font-bold text-slate-800 dark:text-white mb-1.5">{title}</div>
