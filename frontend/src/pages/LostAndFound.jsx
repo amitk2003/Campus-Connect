@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
+import { useSearchParams } from 'react-router-dom';
 import { Search, PlusCircle, AlertCircle, CheckCircle, MapPin, Tag, Clock, Filter, X } from 'lucide-react';
 import { addNotification } from '../components/NotificationBell';
 
-// Publishable key is safe to expose in frontend — it's not the secret key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
 
 export default function LostAndFound() {
   const [activeTab, setActiveTab] = useState('browse');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState(''); // '', 'lost', 'found'
-  const [claimModal, setClaimModal] = useState(null); // report object or null
+  const [typeFilter, setTypeFilter] = useState('');
+  const [claimModal, setClaimModal] = useState(null);
   const [verificationText, setVerificationText] = useState('');
+  const [query] = useSearchParams();  // ← fix: was never defined before
   const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -72,7 +72,7 @@ export default function LostAndFound() {
       alert("Please log in to submit a report.");
       return;
     }
-    
+
     const submitData = new FormData();
     Object.keys(formData).forEach(key => {
       if (formData[key] !== null) {
@@ -84,18 +84,18 @@ export default function LostAndFound() {
       const res = await axios.post(`${backendUrl}/api/lostandfound/report`, submitData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      
+
       if (res.data.matches && res.data.matches.length > 0) {
         const bestMatch = res.data.matches[0];
         const methodLabel = bestMatch.match_method === 'text+image' ? '📸 Text + Image AI' : '📝 Text AI';
-        addNotification('match', '🎯 Possible Match Found!', 
+        addNotification('match', '🎯 Possible Match Found!',
           `${res.data.match_count} match(es) for "${formData.item_name}" via ${methodLabel}. Check Found items.`
         );
         alert(`Report submitted! 🎯 ${res.data.match_count} possible match(es) found!\n\nBest match: "${bestMatch.item_name}"\nCheck your notifications & Found items.`);
       } else {
         alert('Report submitted successfully!');
       }
-      
+
       setFormData({
         type: 'lost', item_name: '', category: 'General', location: '',
         date: new Date().toISOString().split('T')[0], description: '', image: null
@@ -106,8 +106,6 @@ export default function LostAndFound() {
       alert('Error submitting report. Make sure you are logged in.');
     }
   };
-
-
 
   const handleClaim = async () => {
     const token = localStorage.getItem('token');
@@ -126,8 +124,8 @@ export default function LostAndFound() {
       });
 
       const reward = res.data.reward_amount || 0;
-      addNotification('claim', '🙋 Claim Submitted!', `Your claim for "${claimModal.item_name}" is pending admin review.${ reward > 0 ? ` You offered ₹${reward} reward to the finder.` : ''}`);
-      alert(`Claim submitted! ✅\nAdmin will verify your ownership.\n${ reward > 0 ? `🎁 ₹${reward} will be rewarded to the honest finder upon approval.` : ''}`);
+      addNotification('claim', '🙋 Claim Submitted!', `Your claim for "${claimModal.item_name}" is pending admin review.${reward > 0 ? ` You offered ₹${reward} reward to the finder.` : ''}`);
+      alert(`Claim submitted! ✅\nAdmin will verify your ownership.\n${reward > 0 ? `🎁 ₹${reward} will be rewarded to the honest finder upon approval.` : ''}`);
       setClaimModal(null);
       setVerificationText('');
       setRewardAmount('');
@@ -148,20 +146,20 @@ export default function LostAndFound() {
             Reclaim what's yours or help others find theirs.
           </p>
         </div>
-        
+
         <div className="flex mt-4 md:mt-0 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
-          <button 
+          <button
             onClick={() => setActiveTab('browse')}
             className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'browse' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
           >
-            <Search className="inline w-4 h-4 mr-2"/> Browse
+            <Search className="inline w-4 h-4 mr-2" /> Browse
           </button>
           {user?.role !== 'Admin' && (
-            <button 
+            <button
               onClick={() => setActiveTab('report')}
               className={`px-6 py-2.5 rounded-lg font-medium transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'}`}
             >
-              <PlusCircle className="inline w-4 h-4 mr-2"/> Report Item
+              <PlusCircle className="inline w-4 h-4 mr-2" /> Report Item
             </button>
           )}
         </div>
@@ -190,22 +188,21 @@ export default function LostAndFound() {
           </div>
 
           {loading ? (
-             <div className="flex justify-center p-12">
-               <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
-             </div>
+            <div className="flex justify-center p-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+            </div>
           ) : reports.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {reports.map((report) => (
                 <div key={report._id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group hover:-translate-y-1">
                   <div className={`h-2 ${report.type === 'lost' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                  
-                  {/* Image display */}
+
                   {report.image_url && (
                     <div className="h-48 bg-slate-100 dark:bg-slate-700/50 overflow-hidden">
-                      <img src={report.image_url} alt={report.item_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => e.target.style.display='none'} />
+                      <img src={report.image_url} alt={report.item_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => e.target.style.display = 'none'} />
                     </div>
                   )}
-                  
+
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${report.type === 'lost' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
@@ -219,31 +216,31 @@ export default function LostAndFound() {
                     </div>
                     <h3 className="text-xl font-bold mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{report.item_name}</h3>
                     <p className="text-slate-600 dark:text-slate-300 text-sm mb-4 line-clamp-2">
-                       {report.description || 'No description provided.'}
+                      {report.description || 'No description provided.'}
                     </p>
                     <div className="flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400 mb-6">
-                       {report.user_anon_name && (
-                         <span className="flex items-center text-blue-500 font-semibold italic">
-                           <Clock className="w-4 h-4 mr-2 text-slate-400"/> Reported by: {report.user_anon_name}
-                         </span>
-                       )}
-                       <span className="flex items-center"><Tag className="w-4 h-4 mr-2"/> {report.category}</span>
-                       {report.location && <span className="flex items-center"><MapPin className="w-4 h-4 mr-2"/> {report.location}</span>}
+                      {report.user_anon_name && (
+                        <span className="flex items-center text-blue-500 font-semibold italic">
+                          <Clock className="w-4 h-4 mr-2 text-slate-400" /> Reported by: {report.user_anon_name}
+                        </span>
+                      )}
+                      <span className="flex items-center"><Tag className="w-4 h-4 mr-2" /> {report.category}</span>
+                      {report.location && <span className="flex items-center"><MapPin className="w-4 h-4 mr-2" /> {report.location}</span>}
                     </div>
-                    
+
                     {report.type === 'found' && (
-                       user?.role === 'Admin' ? (
+                      user?.role === 'Admin' ? (
                         <div className="w-full mt-2 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-700 dark:text-amber-400 font-medium text-center">
-                           Admin restricted from claiming items
+                          Admin restricted from claiming items
                         </div>
-                       ) : (
-                        <button 
+                      ) : (
+                        <button
                           onClick={() => setClaimModal(report)}
                           className="w-full py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
                         >
                           🙋 Claim This Item
                         </button>
-                       )
+                      )
                     )}
                   </div>
                 </div>
@@ -251,28 +248,28 @@ export default function LostAndFound() {
             </div>
           ) : (
             <div className="text-center py-24 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-               <AlertCircle className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-               <h3 className="text-xl font-medium text-slate-600 dark:text-slate-300">No reports found</h3>
-               <p className="text-slate-500 mt-2">Be the first to report an item.</p>
+              <AlertCircle className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-slate-600 dark:text-slate-300">No reports found</h3>
+              <p className="text-slate-500 mt-2">Be the first to report an item.</p>
             </div>
           )}
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 rounded-2xl max-w-2xl mx-auto shadow-sm">
           <h2 className="text-2xl font-bold mb-6">Report an Item</h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
-              <button 
+              <button
                 type="button"
-                onClick={() => setFormData({...formData, type: 'lost'})}
+                onClick={() => setFormData({ ...formData, type: 'lost' })}
                 className={`py-3 rounded-xl font-medium border-2 transition-all ${formData.type === 'lost' ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}
               >
                 🔴 I lost something
               </button>
-              <button 
+              <button
                 type="button"
-                onClick={() => setFormData({...formData, type: 'found'})}
+                onClick={() => setFormData({ ...formData, type: 'found' })}
                 className={`py-3 rounded-xl font-medium border-2 transition-all ${formData.type === 'found' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}
               >
                 🟢 I found something
@@ -285,21 +282,21 @@ export default function LostAndFound() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category</label>
-                  <select name="category" value={formData.category} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
-                    <option>Electronics</option>
-                    <option>Books</option>
-                    <option>Keys & Wallets</option>
-                    <option>Clothing</option>
-                    <option>ID Cards</option>
-                    <option>General</option>
-                  </select>
-               </div>
-               <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date Lost/Found</label>
-                  <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                <select name="category" value={formData.category} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                  <option>Electronics</option>
+                  <option>Books</option>
+                  <option>Keys & Wallets</option>
+                  <option>Clothing</option>
+                  <option>ID Cards</option>
+                  <option>General</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Date Lost/Found</label>
+                <input type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+              </div>
             </div>
 
             <div>
@@ -331,14 +328,13 @@ export default function LostAndFound() {
       {claimModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
-            <button onClick={() => {setClaimModal(null); setVerificationText(''); setRewardAmount('');}} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <button onClick={() => { setClaimModal(null); setVerificationText(''); setRewardAmount(''); }} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <X className="w-5 h-5" />
             </button>
             <div className="p-8">
               <h2 className="text-2xl font-extrabold mb-1 text-slate-900 dark:text-white">Claim Item</h2>
               <p className="text-slate-500 mb-2">Claiming: <strong>{claimModal.item_name}</strong></p>
 
-              {/* Reward Banner */}
               <div className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-6">
                 <span className="text-2xl">🎁</span>
                 <div>
