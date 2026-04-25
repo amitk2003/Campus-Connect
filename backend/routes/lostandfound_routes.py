@@ -14,9 +14,9 @@ lostandfound_bp = Blueprint('lostandfound', __name__)
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "sk_test_mock")
 stripe.api_key = STRIPE_SECRET_KEY
 
-def calculate_claim_fee(item_value):
-    # Set to 0 for MVP to encourage community growth
-    return 0
+def calculate_finder_reward(reward_amount):
+    """Platform takes 0% — 100% of the reward goes to the finder."""
+    return max(0.0, float(reward_amount))
 
 reports_collection = db['Reports']
 claims_collection = db['Claims']
@@ -241,94 +241,51 @@ def find_matches(report_id):
 @lostandfound_bp.route('/claim', methods=['POST'])
 @jwt_required()
 def submit_claim():
-    claims = get_jwt()
-    if claims.get('role', '').lower() == 'admin':
+    jwt_claims = get_jwt()
+    if jwt_claims.get('role', '').lower() == 'admin':
         return jsonify({"message": "Admin cannot submit claims"}), 403
 
     data = request.get_json() if request.is_json else request.form
     if not data:
         data = {}
-        
+
     claimer_id = get_jwt_identity()
     report_id = data.get('report_id')  # The found report they are claiming
-    
+
     if not report_id:
         return jsonify({"message": "report_id is required"}), 400
-        
+
     report = reports_collection.find_one({"_id": ObjectId(report_id)})
     if not report or report.get('type') != 'found':
         return jsonify({"message": "Invalid found report"}), 404
 
-    item_value_estimation = float(data.get('item_value_estimation', 0))
-    verification_details = data.get('verification_details', '')
-    fee = calculate_claim_fee(item_value_estimation)
-    
-    # --- Payment Integration for Claim Fee ---
-    session_id = data.get('session_id')
-    
-    # Step 1: Create Order if no payment details passed and a fee is required
-    if fee > 0 and not session_id:
-        if STRIPE_SECRET_KEY == "sk_test_mock":
-            order_id = "mock_claim_order_" + str(report_id)
-            return jsonify({
-                "message": "Fee required. Mock order created.",
-                "requires_payment": True,
-                "fee": fee,
-                "order_id": order_id,
-                "key": "mock"
-            }), 200
-        else:
-            try:
-                frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-                session = stripe.checkout.Session.create(
-                    payment_method_types=['card'],
-                    line_items=[{
-                        'price_data': {
-                            'currency': 'inr',
-                            'product_data': {
-                                'name': f"CampusConnect Claim Fee: {report.get('item_name')}",
-                            },
-                            'unit_amount': int(fee * 100),
-                        },
-                        'quantity': 1,
-                    }],
-                    mode='payment',
-                    success_url=f"{frontend_url}/lost-found?success=true&session_id={{CHECKOUT_SESSION_ID}}&report_id={report_id}&verification={verification_details}&value={item_value_estimation}",
-                    cancel_url=f"{frontend_url}/lost-found?canceled=true",
-                    metadata={"report_id": report_id, "claimer_id": claimer_id}
-                )
-                return jsonify({
-                    "message": "Fee required. Stripe Session Created.",
-                    "requires_payment": True,
-                    "fee": fee,
-                    "url": session.url,
-                    "session_id": session.id
-                }), 200
-            except Exception as e:
-                return jsonify({"error": str(e)}), 400
+    # Prevent claimer from claiming their own report
+    if str(report.get('user_id')) == str(claimer_id):
+        return jsonify({"message": "You cannot claim an item you reported yourself"}), 400
 
-    fee_paid = False
-    
-    # Step 2: Verify Payment if a fee was required
-    if fee > 0 and STRIPE_SECRET_KEY != "sk_test_mock":
-        try:
-             session = stripe.checkout.Session.retrieve(session_id)
-             if session.payment_status != 'paid':
-                  return jsonify({"message": "Payment not finalized"}), 400
-             fee_paid = True
-        except Exception as e:
-             return jsonify({"message": "Invalid session", "error": str(e)}), 400
-             
-    if fee > 0 and STRIPE_SECRET_KEY == "sk_test_mock":
-        fee_paid = True  # Mock success
+    verification_details = data.get('verification_details', '')
+
+    # --- Reward Model: Owner rewards the Finder (platform takes 0%) ---
+    reward_amount = calculate_finder_reward(data.get('reward_amount', 0))
+    finder_id = report.get('user_id')  # The person who found & reported the item
 
     new_claim = {
         "found_report_id": report_id,
+        "claimer_id": claimer_id,
+        "finder_id": finder_id,
+        "verification_details": verification_details,
+        "reward_amount": reward_amount,  # Amount owner is rewarding the finder
+        "reward_paid": False,
+        "status": "Pending",
         "created_at": datetime.datetime.utcnow()
     }
-    
+
     claims_collection.insert_one(new_claim)
-    return jsonify({"message": "Claim submitted successfully, wait for admin approval"}), 201
+    return jsonify({
+        "message": "Claim submitted successfully. Admin will verify your ownership.",
+        "reward_amount": reward_amount,
+        "note": f"₹{reward_amount} will be rewarded to the finder upon admin approval." if reward_amount > 0 else "No reward offered."
+    }), 201
 
 
 @lostandfound_bp.route('/claims', methods=['GET'])

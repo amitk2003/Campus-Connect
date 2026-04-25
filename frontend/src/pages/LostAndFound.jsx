@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { loadStripe } from '@stripe/stripe-js';
 import { Search, PlusCircle, AlertCircle, CheckCircle, MapPin, Tag, Clock, Filter, X } from 'lucide-react';
 import { addNotification } from '../components/NotificationBell';
+
+// Publishable key is safe to expose in frontend — it's not the secret key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
 
 export default function LostAndFound() {
   const [activeTab, setActiveTab] = useState('browse');
@@ -10,7 +15,7 @@ export default function LostAndFound() {
   const [typeFilter, setTypeFilter] = useState(''); // '', 'lost', 'found'
   const [claimModal, setClaimModal] = useState(null); // report object or null
   const [verificationText, setVerificationText] = useState('');
-
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const user = JSON.parse(localStorage.getItem('user') || 'null');
 
   const [formData, setFormData] = useState({
@@ -23,8 +28,7 @@ export default function LostAndFound() {
     image: null,
   });
 
-  const [itemValue, setItemValue] = useState('');
-  const [claimFee, setClaimFee] = useState(0);
+  const [rewardAmount, setRewardAmount] = useState('');
 
   useEffect(() => {
     if (activeTab === 'browse') {
@@ -33,48 +37,16 @@ export default function LostAndFound() {
   }, [activeTab, typeFilter]);
 
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    if (query.get("success")) {
-      const sessionId = query.get("session_id");
-      const reportId = query.get("report_id");
-      const verification = query.get("verification");
-      const v = query.get("value");
-      if (sessionId && reportId) {
-         verifyStripeClaim(sessionId, reportId, verification, v);
-      }
-    }
     if (query.get("canceled")) {
-      alert("Payment was canceled.");
+      alert("Action was canceled.");
       window.history.replaceState({}, document.title, "/lost-found");
     }
   }, []);
 
-  const verifyStripeClaim = async (sessionId, reportId, verifyText, val) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    try {
-      await axios.post('/api/lostandfound/claim', { 
-        session_id: sessionId,
-        report_id: reportId,
-        verification_details: verifyText,
-        item_value: parseFloat(val) || 0
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert('Claim submitted & Fee Paid Successfully!');
-      addNotification('claim', 'Claim Submitted', `Your claim has been submitted.`);
-      fetchReports();
-      window.history.replaceState({}, document.title, "/lost-found");
-    } catch (err) {
-      console.error(err);
-      alert("Payment verification failed.");
-    }
-  };
-
   const fetchReports = async () => {
     setLoading(true);
     try {
-      let url = '/api/lostandfound/reports';
+      let url = `${backendUrl}/api/lostandfound/reports`;
       if (typeFilter) url += `?type=${typeFilter}`;
       const res = await axios.get(url);
       setReports(res.data);
@@ -109,7 +81,7 @@ export default function LostAndFound() {
     });
 
     try {
-      const res = await axios.post('/api/lostandfound/report', submitData, {
+      const res = await axios.post(`${backendUrl}/api/lostandfound/report`, submitData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       
@@ -135,18 +107,6 @@ export default function LostAndFound() {
     }
   };
 
-  const calculateFee = (val) => {
-      const v = parseFloat(val) || 0;
-      if (v <= 200) return 0;
-      if (v <= 500) return 5;
-      return 5 + 5 * Math.ceil((v - 500) / 1000);
-  };
-
-  const handleValueChange = (e) => {
-      setItemValue(e.target.value);
-      setClaimFee(calculateFee(e.target.value));
-  };
-
 
 
   const handleClaim = async () => {
@@ -157,31 +117,20 @@ export default function LostAndFound() {
     }
 
     try {
-      // Create claim & get order
-      const res = await axios.post('/api/lostandfound/claim', {
+      const res = await axios.post(`${backendUrl}/api/lostandfound/claim`, {
         report_id: claimModal._id,
         verification_details: verificationText,
-        item_value: parseFloat(itemValue) || 0
+        reward_amount: parseFloat(rewardAmount) || 0
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const orderData = res.data;
-
-      if (orderData.key === 'mock' || !orderData.url) {
-        // Mock success or free claim
-        addNotification('claim', 'Claim Submitted', `Your claim for "${claimModal.item_name}" has been submitted.`);
-        alert('Claim submitted! The admin will verify your ownership.');
-        setClaimModal(null);
-        setVerificationText('');
-        setItemValue('');
-        setClaimFee(0);
-        return;
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = orderData.url;
-
+      const reward = res.data.reward_amount || 0;
+      addNotification('claim', '🙋 Claim Submitted!', `Your claim for "${claimModal.item_name}" is pending admin review.${ reward > 0 ? ` You offered ₹${reward} reward to the finder.` : ''}`);
+      alert(`Claim submitted! ✅\nAdmin will verify your ownership.\n${ reward > 0 ? `🎁 ₹${reward} will be rewarded to the honest finder upon approval.` : ''}`);
+      setClaimModal(null);
+      setVerificationText('');
+      setRewardAmount('');
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || 'Error submitting claim.');
@@ -382,57 +331,64 @@ export default function LostAndFound() {
       {claimModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
-            <button onClick={() => {setClaimModal(null); setVerificationText('');}} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+            <button onClick={() => {setClaimModal(null); setVerificationText(''); setRewardAmount('');}} className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <X className="w-5 h-5" />
             </button>
             <div className="p-8">
               <h2 className="text-2xl font-extrabold mb-1 text-slate-900 dark:text-white">Claim Item</h2>
               <p className="text-slate-500 mb-2">Claiming: <strong>{claimModal.item_name}</strong></p>
-              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mb-6">
-                ⚠️ Admin will verify your ownership. A ₹20 claim fee is charged upon approval.
-              </p>
-              
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Prove it's yours (describe unique features, serial number, etc.)</label>
-                <textarea 
+
+              {/* Reward Banner */}
+              <div className="flex items-start gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-6">
+                <span className="text-2xl">🎁</span>
+                <div>
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Reward the honest finder!</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-500 mt-0.5">The platform charges <strong>zero fees</strong>. Any reward you offer goes <strong>100% to the person who found your item.</strong></p>
+                </div>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Prove it's yours *</label>
+                <textarea
                   value={verificationText}
                   onChange={(e) => setVerificationText(e.target.value)}
-                  rows="4" 
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white" 
-                  placeholder="e.g. It has a scratch on the back, serial number is XYZ123..."
+                  rows="3"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
+                  placeholder="e.g. It has a scratch on the back, serial number XYZ123, initials written inside..."
                   required
-                ></textarea>
+                />
               </div>
-              
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Estimated Item Value (₹)</label>
-                  <input 
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  🎁 Thank You Reward for Finder <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₹</span>
+                  <input
                     type="number"
-                    value={itemValue}
-                    onChange={handleValueChange}
+                    value={rewardAmount}
+                    onChange={(e) => setRewardAmount(e.target.value)}
                     min="0"
-                    placeholder="e.g. 500"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
-                    required
+                    placeholder="e.g. 50"
+                    className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-transparent focus:ring-2 focus:ring-emerald-500 outline-none transition-all dark:text-white"
                   />
-                  {claimFee > 0 && (
-                     <div className="mt-2 text-sm text-blue-700 dark:text-blue-400 font-bold">
-                       Fee applicable: ₹{claimFee}
-                     </div>
-                  )}
-                  {claimFee === 0 && itemValue !== '' && (
-                     <div className="mt-2 text-sm text-emerald-600 font-bold">
-                       No fee required (Value ≤ ₹200)
-                     </div>
-                  )}
                 </div>
-              
-              <button 
+                {parseFloat(rewardAmount) > 0 ? (
+                  <div className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
+                    ✅ ₹{parseFloat(rewardAmount)} will go entirely to the finder. Platform fee: ₹0.
+                  </div>
+                ) : (
+                  <div className="mt-2 text-xs text-slate-400">No reward offered — that's okay too!</div>
+                )}
+              </div>
+
+              <button
                 onClick={handleClaim}
-                disabled={!verificationText.trim() || itemValue === ''}
+                disabled={!verificationText.trim()}
                 className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all"
               >
-                {claimFee > 0 ? `Pay ₹${claimFee} & Submit Claim` : 'Submit Claim Request'}
+                {parseFloat(rewardAmount) > 0 ? `Submit Claim + 🎁 ₹${parseFloat(rewardAmount)} Reward` : 'Submit Claim Request'}
               </button>
             </div>
           </div>

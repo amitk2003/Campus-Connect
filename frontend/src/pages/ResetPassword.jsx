@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function ResetPassword() {
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/reset-password', { token, password });
+      const res = await axios.post(`${backendUrl}/api/auth/reset-password`, { token, password });
       setStatus({ type: 'success', message: res.data.message });
       setTimeout(() => navigate('/'), 3000);
     } catch (err) {

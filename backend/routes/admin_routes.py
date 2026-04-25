@@ -99,7 +99,8 @@ def get_all_claims():
 
     for claim in claims:
         report = reports_collection.find_one({"_id": ObjectId(claim.get("found_report_id"))})
-        claimer = users_collection.find_one({"_id": ObjectId(claim.get("claimer_id"))})
+        claimer = users_collection.find_one({"_id": ObjectId(claim.get("claimer_id"))}) if claim.get("claimer_id") else None
+        finder = users_collection.find_one({"_id": ObjectId(claim.get("finder_id"))}) if claim.get("finder_id") else None
 
         enriched_claims.append({
             "_id": str(claim["_id"]),
@@ -108,8 +109,13 @@ def get_all_claims():
             "item_description": report.get("description", "") if report else "",
             "claimer_name": claimer.get("name", "Unknown") if claimer else "Unknown",
             "claimer_email": claimer.get("email", "") if claimer else "",
+            "finder_name": finder.get("name", "Unknown") if finder else "Unknown",
+            "finder_email": finder.get("email", "") if finder else "",
+            "finder_anon_name": finder.get("anon_name", "Unknown") if finder else "Unknown",
+            "reward_amount": claim.get("reward_amount", 0),
+            "reward_paid": claim.get("reward_paid", False),
             "verification_details": claim.get("verification_details", ""),
-            "status": claim.get("status"),
+            "status": claim.get("status", "Pending"),
             "created_at": claim.get("created_at")
         })
 
@@ -136,7 +142,7 @@ def verify_claim(claim_id):
     if action == 'approve':
         claims_collection.update_one(
             {"_id": ObjectId(claim_id)},
-            {"$set": {"status": "Approved", "resolved_at": datetime.datetime.utcnow()}}
+            {"$set": {"status": "Approved", "resolved_at": datetime.datetime.utcnow(), "reward_paid": True}}
         )
 
         reports_collection.update_one(
@@ -144,19 +150,25 @@ def verify_claim(claim_id):
             {"$set": {"status": "Resolved"}}
         )
 
-        # Record payment
-        payment = {
-            "type": "claim_fee",
-            "claim_id": claim_id,
-            "user_id": claim.get("claimer_id"),
-            "amount": 20,
-            "platform_fee": 20,
-            "status": "Completed",
-            "created_at": datetime.datetime.utcnow()
-        }
-        payments_collection.insert_one(payment)
+        # ✅ Record Finder Reward Payment (Owner → Finder, Platform takes 0%)
+        reward_amount = claim.get("reward_amount", 0)
+        if reward_amount > 0:
+            reward_payment = {
+                "type": "finder_reward",
+                "claim_id": claim_id,
+                "from_user_id": claim.get("claimer_id"),   # Owner pays
+                "to_user_id": claim.get("finder_id"),       # Finder receives
+                "amount": reward_amount,
+                "platform_fee": 0,                           # Platform takes 0%
+                "status": "Completed",
+                "created_at": datetime.datetime.utcnow()
+            }
+            payments_collection.insert_one(reward_payment)
 
-        return jsonify({"message": "Claim approved. ₹20 fee charged."}), 200
+        return jsonify({
+            "message": "Claim approved. Item ownership verified.",
+            "reward_note": f"₹{reward_amount} finder reward recorded from owner to finder." if reward_amount > 0 else "No reward was offered."
+        }), 200
 
     else:
         claims_collection.update_one(

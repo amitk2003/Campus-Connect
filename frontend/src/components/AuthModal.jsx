@@ -3,6 +3,7 @@ import axios from 'axios';
 import { X } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLogin }) {
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [activeView, setActiveView] = useState('login'); // login, register, forgot
   const [formData, setFormData] = useState({
     name: '',
@@ -28,12 +29,12 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
     
     try {
       if (activeView === 'forgot') {
-        const res = await axios.post('/api/auth/forgot-password', { email: formData.email });
+        const res = await axios.post(`${backendUrl}/api/auth/forgot-password`, { email: formData.email });
         setSuccess(res.data.message);
         return;
       }
 
-      const endpoint = activeView === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = activeView === 'login' ? `${backendUrl}/api/auth/login` : `${backendUrl}/api/auth/register`;
       const res = await axios.post(`${endpoint}`, formData);
       
       if (activeView === 'login') {
@@ -69,7 +70,7 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
     if (!mockGoogleData.email) return;
 
     try {
-      const res = await axios.post('/api/auth/google-login', mockGoogleData);
+      const res = await axios.post(`${backendUrl}/api/auth/google-login`, mockGoogleData);
       localStorage.setItem('token', res.data.access_token);
       localStorage.setItem('user', JSON.stringify({ 
         id: res.data.user_id, 

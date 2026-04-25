@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { loadStripe } from '@stripe/stripe-js';
 import { ShoppingBag, Tag, ShoppingCart, IndianRupee, MapPin, Search, SlidersHorizontal, X, User } from 'lucide-react';
 import { addNotification } from '../components/NotificationBell';
+
+// Publishable key is safe to expose in frontend — it's not the secret key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 export default function Marketplace() {
   const [activeTab, setActiveTab] = useState('browse');
@@ -14,7 +18,7 @@ export default function Marketplace() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   // Sell form states
   const [formData, setFormData] = useState({
     title: '',
@@ -68,7 +72,7 @@ export default function Marketplace() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await axios.post(`/api/marketplace/buy/${itemId}`, { session_id: sessionId }, {
+      await axios.post(`${backendUrl}/api/marketplace/buy/${itemId}`, { session_id: sessionId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert('Payment Successful!');
@@ -94,8 +98,8 @@ export default function Marketplace() {
 
     const query = params.toString();
     const url = query
-      ? `/api/marketplace/items?${query}`
-      : `/api/marketplace/items`;
+      ? `${backendUrl}/api/marketplace/items?${query}`
+      : `${backendUrl}/api/marketplace/items`;
 
     console.log("URL:", url);
 
@@ -160,10 +164,10 @@ export default function Marketplace() {
     };
 
     if (editingItem) {
-      await axios.put(`/api/marketplace/items/${editingItem._id}`, submitData, config);
+      await axios.put(`${backendUrl}/api/marketplace/items/${editingItem._id}`, submitData, config);
       alert('Item updated successfully!');
     } else {
-      await axios.post('/api/marketplace/items', submitData, config);
+      await axios.post('${backendUrl}/api/marketplace/items', submitData, config);
       alert('Item listed successfully!');
     }
 
@@ -178,7 +182,7 @@ export default function Marketplace() {
     if(!window.confirm("Are you sure you want to delete this item?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`/api/marketplace/items/${itemId}`, {
+      await axios.delete(`${backendUrl}/api/marketplace/items/${itemId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchItems();
@@ -217,7 +221,7 @@ export default function Marketplace() {
 
     try {
       // Create order
-      const res = await axios.post(`/api/marketplace/buy/${paymentModal._id}`, {}, {
+      const res = await axios.post(`${backendUrl}/api/marketplace/buy/${paymentModal._id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -231,8 +235,18 @@ export default function Marketplace() {
         return;
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = orderData.url;
+      // Redirect to Stripe Checkout using the publishable key (never the secret key)
+      if (orderData.session_id) {
+        const stripe = await stripePromise;
+        const { error } = await stripe.redirectToCheckout({ sessionId: orderData.session_id });
+        if (error) {
+          console.error('Stripe redirect error:', error);
+          alert(error.message);
+        }
+      } else {
+        // Fallback: use the URL directly if session_id not returned separately
+        window.location.href = orderData.url;
+      }
 
     } catch (err) {
       console.error(err);

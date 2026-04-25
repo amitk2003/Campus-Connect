@@ -5,7 +5,7 @@ import {
   Users, ShoppingBag, Search, CheckCircle, 
   XCircle, TrendingUp, Package, Shield, IndianRupee 
 } from 'lucide-react';
-
+const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 export default function AdminDashboard() {
 
   const navigate = useNavigate();
@@ -35,9 +35,9 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const [statsRes, claimsRes, txRes] = await Promise.all([
-        axios.get('/api/admin/dashboard', { headers }),
-        axios.get('/api/admin/claims', { headers }),
-        axios.get('/api/admin/transactions', { headers })
+        axios.get(`${backendUrl}/api/admin/dashboard`, { headers }),
+        axios.get(`${backendUrl}/api/admin/claims`, { headers }),
+        axios.get(`${backendUrl}/api/admin/transactions`, { headers })
       ]);
 
       setStats(statsRes.data);
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
   const handleVerifyClaim = async (claimId, action) => {
     try {
-      await axios.post(`/api/admin/claims/${claimId}/verify`, { action }, { headers });
+      await axios.post(`${backendUrl}/api/admin/claims/${claimId}/verify`, { action }, { headers });
       alert(`Claim ${action}d successfully!`);
       fetchDashboard();
     } catch (err) {

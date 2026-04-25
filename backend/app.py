@@ -29,7 +29,7 @@ app.json = CustomJSONProvider(app)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": "http://localhost:5173"}},
+    resources={r"/api/*": {"origins": "http://localhost:5173", }},
     allow_headers=["Content-Type", "Authorization"],
     supports_credentials=True
 )
@@ -56,5 +56,8 @@ def health_check():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
