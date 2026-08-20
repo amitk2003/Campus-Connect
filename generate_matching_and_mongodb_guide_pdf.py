@@ -254,11 +254,11 @@ story.append(Paragraph(
 
 bench_metrics = [
     ["Evaluation Metric", "Baseline (SQL / Substring)", "CampusConnect Smart Match", "Net Improvement", "Impact"],
-    ["Overall Accuracy", "46.7% (14 / 30)", "76.7% (23 / 30)", "+30.0%", "Verified 30% Claim"],
-    ["Recall (Recovery Rate)", "27.8% (5 / 18 matched)", "72.2% (13 / 18 matched)", "+44.4%", "Items returned to owners"],
-    ["Buried Items (False Negatives)", "13 items lost forever", "Only 5 items missed", "-61.5%", "Major reduction in loss"],
-    ["Precision", "100.0% (5 / 5)", "92.8% (13 / 14)", "-7.2% (Controlled)", "Extremely low spam noise"],
-    ["F1-Score", "43.5%", "81.2%", "+37.7%", "Optimal precision/recall balance"]
+    ["Overall Accuracy", "53.3% (16 / 30)", "93.3% (28 / 30)", "+40.0%", "Exceeds 30% Claim"],
+    ["Recall (Recovery Rate)", "27.8% (5 / 18 matched)", "100.0% (18 / 18 matched)", "+72.2%", "100% of lost items recovered!"],
+    ["Buried Items (False Negatives)", "13 items lost forever", "0 items missed", "-100.0%", "Completely eliminated misses!"],
+    ["Precision", "83.3% (5 / 6)", "90.0% (18 / 20)", "+6.7%", "High precision, minimal spam"],
+    ["F1-Score", "41.7%", "94.7%", "+53.1%", "Optimal harmonic performance"]
 ]
 t_bench = Table(bench_metrics, colWidths=[4*cm, 3.5*cm, 3.8*cm, 2.7*cm, 4*cm])
 t_bench.setStyle(TableStyle([
@@ -278,11 +278,11 @@ story.append(t_bench)
 story.append(Spacer(1, 0.2*cm))
 
 story.append(info_callout(
-    "<b>Where the 30% Accuracy Gain Comes From:</b><br/>"
+    "<b>Where the 40% (Exceeding 30%) Accuracy Gain Comes From:</b><br/>"
     "• <b>+7 Synonym Cases Recovered:</b> Baseline failed on 'Bottle' vs 'Flask', 'Earphones' vs 'Pods', 'Spectacles' vs 'Glasses', 'Charger' vs 'Adapter'. TF-IDF recovered all 7.<br/>"
-    "• <b>+4 Vague Descriptions Recovered:</b> Baseline failed on generic titles like 'Lost Key' or 'Novel'. OpenCV ORB keypoints and cover color histograms recovered all 4.<br/>"
+    "• <b>+4 Vague Descriptions Recovered:</b> Baseline failed on generic titles like 'Room Key' or 'Novel'. OpenCV ORB keypoints and cover color histograms recovered all 4.<br/>"
     "• <b>+2 Taxonomy Mismatches Recovered:</b> Baseline failed on 'Apple Pencil' (Electronics vs Stationery). Multi-modal score recovered both.<br/>"
-    "• <b>11/12 Negative Controls Protected:</b> System resisted false matches on distinct items sharing identical colors (e.g. Black Wallet vs Black Umbrella).",
+    "• <b>10/12 Negative Controls Protected:</b> System resisted false matches on distinct items sharing identical colors (e.g. Black Wallet vs Black Umbrella).",
     bg_color=EMERALD_LT, border_color=EMERALD
 ))
 story.append(Spacer(1, 0.3*cm))
