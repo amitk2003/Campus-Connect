@@ -1,0 +1,9 @@
+
+/pycache__
+/venv
+__pycache__
+1.txt
+userdata.txt
+.env
+*.log
+
