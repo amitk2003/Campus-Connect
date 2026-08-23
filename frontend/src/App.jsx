@@ -346,7 +346,7 @@ function Home() {
             <div style={fadeUp(0.45)} className="mt-10 grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-800 shadow-sm w-full max-w-lg">
               {[
                 { n: 50, s: '+', label: 'Items recovered' },
-                { n: 90, s: '%', label: 'Match accuracy' },
+                { n: 94, s: '%', label: 'Match accuracy' },
                 { n: 10, s: '+', label: 'Active listings' },
               ].map(({ n, s, label }) => (
                 <div key={label} className="flex flex-col items-center py-4 px-2">
