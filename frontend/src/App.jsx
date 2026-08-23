@@ -364,11 +364,25 @@ function Home() {
         <div className="w-full overflow-hidden border-y border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 py-3 select-none">
           <div className="marquee-track flex gap-10 w-max">
             {[
-              '🔐 Secure JWT Auth', '🧠 TF-IDF Smart Match', '🛒 Campus Marketplace',
-              '🔔 Real-time Alerts', '🍃 MongoDB Atlas', '🎨 Tailwind UI',
-              '🔐 Secure JWT Auth', '🧠 TF-IDF Smart Match', '🛒 Campus Marketplace',
-              '🔔 Real-time Alerts', '🍃 MongoDB Atlas', '🎨 Tailwind UI',
-            ].map((item, i) => (
+  '🔐 Secure JWT Auth',
+  '🧠 TF-IDF + OpenCV Vision Match',
+  '⭐ Seller Reviews & Ratings',
+  '🛒 Campus Marketplace',
+  '💳 Stripe Campus Pay',
+  '🎭 Privacy-First Anonymous Handles',
+  '🔔 Real-time Alerts',
+  '🛡️ Admin Moderation',
+  
+  '🔐 Secure JWT Auth',
+  '🧠 TF-IDF + OpenCV Vision Match',
+  '⭐ Seller Reviews & Ratings',
+  '🛒 Campus Marketplace',
+  '💳 Stripe Campus Pay',
+  '🎭 Privacy-First Anonymous Handles',
+  '🔔 Real-time Alerts',
+  '🛡️ Admin Moderation',
+ 
+].map((item, i) => (
               <span key={i} className="text-sm font-semibold text-slate-400 dark:text-slate-500 whitespace-nowrap tracking-wide uppercase">
                 {item}
               </span>

@@ -172,7 +172,7 @@ export default function Marketplace() {
       await axios.put(`${backendUrl}/api/marketplace/items/${editingItem._id}`, submitData, config);
       alert('Item updated successfully!');
     } else {
-      await axios.post('${backendUrl}/api/marketplace/items', submitData, config);
+      await axios.post(`${backendUrl}/api/marketplace/items`, submitData, config);
       alert('Item listed successfully!');
     }
 
@@ -233,7 +233,7 @@ export default function Marketplace() {
       const orderData = res.data;
       if (orderData.key === 'mock' || !orderData.url) {
         // Mock success (No real stripe key provided)
-        addNotification('purchase', '🎉 Purchase Successful!', `You bought "${paymentModal.title}" for ₹${orderData.total_charged}. Meet the seller on campus for pickup.`);
+        addNotification('purchase', 'Purchase Successful!', `You bought "${paymentModal.title}" for ₹${orderData.total_charged}. Meet the seller on campus for pickup.`);
         const purchasedItem = { ...paymentModal };
         setPaymentModal(null);
         fetchItems();
