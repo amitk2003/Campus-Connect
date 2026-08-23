@@ -21,7 +21,6 @@ def calculate_finder_reward(reward_amount):
 reports_collection = db['Reports']
 claims_collection = db['Claims']
 
-<<<<<<< HEAD
 import re
 
 # Stopwords set to filter out domain-general and noisy noise words
@@ -96,24 +95,6 @@ def compute_text_similarity(str1, str2):
         return 0.0
 
     return float(dot_product / (mag1 * mag2))
-=======
-# --- Text Similarity (TF-IDF Cosine) ---
-
-def compute_text_similarity(str1, str2):
-    """Compute cosine similarity between two strings using word frequency vectors (TF-IDF style)."""
-    words1 = str1.lower().split()
-    words2 = str2.lower().split()
-    vec1 = Counter(words1)
-    vec2 = Counter(words2)
-    intersection = set(vec1.keys()) & set(vec2.keys())
-    numerator = sum([vec1.get(x, 0) * vec2.get(x, 0) for x in intersection])
-    sum1 = sum([val**2 for val in vec1.values()])
-    sum2 = sum([val**2 for val in vec2.values()])
-    denominator = math.sqrt(sum1) * math.sqrt(sum2)
-    if not denominator:
-        return 0.0
-    return float(numerator) / denominator
->>>>>>> 0f561d1339bfbc3b52effe2395780a0ec8964e75
 
 
 # --- Image Similarity (OpenCV) ---
