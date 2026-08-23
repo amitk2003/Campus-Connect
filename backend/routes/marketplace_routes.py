@@ -179,10 +179,28 @@ def buy_item(item_id):
         
         if not session_id:
             if STRIPE_SECRET_KEY == "sk_test_mock":
-                order_id = "mock_order_id_" + str(item_id)
+                # Create a real transaction record even for mock payments
+                transaction = {
+                    "item_id": str(item["_id"]),
+                    "buyer_id": buyer_id,
+                    "seller_id": item["seller_id"],
+                    "price": item_price,
+                    "platform_fee": platform_fee,
+                    "total_amount": total_amount,
+                    "razorpay_payment_id": None,
+                    "razorpay_order_id": "mock_order_id_" + str(item_id),
+                    "created_at": datetime.datetime.utcnow(),
+                    "status": "Completed"
+                }
+                transaction_result = transactions_collection.insert_one(transaction)
+                marketplace_collection.update_one(
+                    {"_id": ObjectId(item_id)},
+                    {"$set": {"status": "Sold"}}
+                )
                 return jsonify({
                     "message": "Order created successfully",
-                    "order_id": order_id,
+                    "order_id": "mock_order_id_" + str(item_id),
+                    "transaction_id": str(transaction_result.inserted_id),
                     "price": item_price,
                     "platform_fee": platform_fee,
                     "total_charged": total_amount,

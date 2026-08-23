@@ -3,6 +3,7 @@ import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
 import { ShoppingBag, Tag, ShoppingCart, IndianRupee, MapPin, Search, SlidersHorizontal, X, User } from 'lucide-react';
 import { addNotification } from '../components/NotificationBell';
+import { SellerReviewsModal, WriteReviewModal, SellerRatingBadge } from '../components/SellerReviews';
 
 // Publishable key is safe to expose in frontend — it's not the secret key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -33,6 +34,10 @@ export default function Marketplace() {
 
   // Payment modal
   const [paymentModal, setPaymentModal] = useState(null); // item object or null
+
+  // Reviews modals
+  const [reviewsModal, setReviewsModal] = useState(null); // { sellerId, sellerName }
+  const [writeReview, setWriteReview] = useState(null);   // { transactionId, itemTitle }
 
   const calculateFee = (price, category) => {
     const p = parseFloat(price || 0);
@@ -229,9 +234,13 @@ export default function Marketplace() {
       if (orderData.key === 'mock' || !orderData.url) {
         // Mock success (No real stripe key provided)
         addNotification('purchase', '🎉 Purchase Successful!', `You bought "${paymentModal.title}" for ₹${orderData.total_charged}. Meet the seller on campus for pickup.`);
-        alert(`✅ Mock Payment Successful!\n\nItem: ${paymentModal.title}\nTotal Charged: ₹${orderData.total_charged}\n\nMeet the seller on campus.`);
+        const purchasedItem = { ...paymentModal };
         setPaymentModal(null);
         fetchItems();
+        // Prompt buyer to leave a review
+        if (orderData.transaction_id) {
+          setWriteReview({ transactionId: orderData.transaction_id, itemTitle: purchasedItem.title });
+        }
         return;
       }
 
@@ -369,8 +378,17 @@ export default function Marketplace() {
                        {item.description || "No description provided."}
                     </p>
                     {item.seller_anon_name && (
-                      <div className="text-xs text-purple-500 font-semibold mb-2 flex items-center">
+                      <div className="text-xs text-purple-500 font-semibold mb-1 flex items-center">
                         <User className="w-3 h-3 mr-1"/> Sold by: {item.seller_anon_name}
+                      </div>
+                    )}
+                    {/* Seller rating badge — click to open reviews modal */}
+                    {item.seller_id && (
+                      <div className="mb-2">
+                        <SellerRatingBadge
+                          sellerId={item.seller_id}
+                          onClick={() => setReviewsModal({ sellerId: item.seller_id, sellerName: item.seller_anon_name })}
+                        />
                       </div>
                     )}
                     {item.pickup_location && (
@@ -535,6 +553,25 @@ export default function Marketplace() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Seller Reviews Modal */}
+      {reviewsModal && (
+        <SellerReviewsModal
+          sellerId={reviewsModal.sellerId}
+          sellerName={reviewsModal.sellerName}
+          onClose={() => setReviewsModal(null)}
+        />
+      )}
+
+      {/* Write Review Modal (shown after purchase) */}
+      {writeReview && (
+        <WriteReviewModal
+          transactionId={writeReview.transactionId}
+          itemTitle={writeReview.itemTitle}
+          onClose={() => setWriteReview(null)}
+          onSuccess={() => addNotification('review', '⭐ Review Submitted!', 'Thanks for rating this seller.')}
+        />
       )}
     </div>
   );
