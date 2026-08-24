@@ -6,8 +6,7 @@ import os
 import stripe
 from werkzeug.utils import secure_filename
 from bson import ObjectId
-import math
-from collections import Counter
+# text_similarity module handles math/Counter internally
 
 lostandfound_bp = Blueprint('lostandfound', __name__)
 
@@ -23,78 +22,14 @@ claims_collection = db['Claims']
 
 import re
 
-# Stopwords set to filter out domain-general and noisy noise words
-STOP_WORDS = {
-    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as',
-    'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can',
-    'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had',
-    'has', 'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how',
-    'i', 'if', 'in', 'into', 'is', 'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself',
-    'no', 'nor', 'not', 'now', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves',
-    'out', 'over', 'own', 's', 'same', 'she', 'should', 'so', 'some', 'such', 't', 'than', 'that', 'the',
-    'their', 'theirs', 'them', 'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 'through',
-    'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which',
-    'while', 'who', 'whom', 'why', 'with', 'you', 'your', 'yours', 'yourself', 'yourselves',
-    'lost', 'found', 'item', 'please', 'left', 'near', 'room'
-}
-
-# --- Text Similarity (TF-IDF Cosine) ---
-
-def compute_text_similarity(str1, str2):
-    """
-    Compute true TF-IDF (Term Frequency - Inverse Document Frequency) Cosine Similarity:
-      1. Preprocessing: Tokenize, lowercase, and remove domain & English stop words.
-      2. TF (Term Frequency): Normalized term occurrences per document.
-      3. Smooth IDF (Inverse Document Frequency): log((1 + N) / (1 + df)) + 1.
-      4. Vector Cosine Similarity: (V1 . V2) / (||V1|| * ||V2||).
-    """
-    if not str1 or not str2:
-        return 0.0
-
-    # 1. Tokenize & remove stop words
-    tokens1 = [w for w in re.findall(r'\b\w+\b', str1.lower()) if w not in STOP_WORDS]
-    tokens2 = [w for w in re.findall(r'\b\w+\b', str2.lower()) if w not in STOP_WORDS]
-
-    # Fallback to raw tokens if all words were filtered
-    if not tokens1 or not tokens2:
-        tokens1 = re.findall(r'\b\w+\b', str1.lower())
-        tokens2 = re.findall(r'\b\w+\b', str2.lower())
-        if not tokens1 or not tokens2:
-            return 0.0
-
-    tf1 = Counter(tokens1)
-    tf2 = Counter(tokens2)
-    len1 = len(tokens1)
-    len2 = len(tokens2)
-
-    all_vocab = set(tf1.keys()).union(set(tf2.keys()))
-    N = 2  # Document pair comparison
-
-    # 2. Calculate TF-IDF weight vectors
-    vec1 = {}
-    vec2 = {}
-    for word in all_vocab:
-        # Document frequency df
-        df = (1 if word in tf1 else 0) + (1 if word in tf2 else 0)
-        # Smooth IDF formulation
-        idf = math.log((1 + N) / (1 + df)) + 1.0
-
-        # Term frequency normalized
-        w_tf1 = tf1.get(word, 0) / len1
-        w_tf2 = tf2.get(word, 0) / len2
-
-        vec1[word] = w_tf1 * idf
-        vec2[word] = w_tf2 * idf
-
-    # 3. Cosine similarity
-    dot_product = sum(vec1[w] * vec2[w] for w in all_vocab)
-    mag1 = math.sqrt(sum(val**2 for val in vec1.values()))
-    mag2 = math.sqrt(sum(val**2 for val in vec2.values()))
-
-    if mag1 == 0 or mag2 == 0:
-        return 0.0
-
-    return float(dot_product / (mag1 * mag2))
+# --- Semantic Text Similarity (synonym-aware TF-IDF) ---
+# Imported from utils.text_similarity which handles:
+#   - Compound-word joining  ("mobile phone" -> mobilephone)
+#   - Synonym expansion      (flask/bottle -> __vessel__, smartphone/mobilephone -> __smartphone__)
+#   - Case normalisation     (iPhone15 / Iphone15 both -> __iphone__)
+#   - Porter stemming        (running/runs/ran -> same stem)
+#   - Smooth TF-IDF cosine   similarity
+from utils.text_similarity import compute_text_similarity
 
 
 # --- Image Similarity (OpenCV) ---
@@ -121,38 +56,51 @@ def smart_match(new_report, found_report):
     """
     Combine text similarity + image similarity + category/name matching
     to produce a comprehensive match score.
-    
+
+    Signals:
+      1. Semantic TF-IDF cosine on full description + item_name
+      2. Category match bonus (15%)
+      3. Semantic name-similarity bonus (20%):
+           fires on exact substring OR compute_text_similarity(name1,name2) >= 0.50
+           Catches synonym pairs: 'bottle'/'flask', 'laptop'/'notebook', etc.
+      4. OpenCV image similarity (35% weight when both images present)
+
+    Match threshold: 0.30 (raised from 0.25 for better precision).
+    Fallback: category match + strong name-synonym score (>=0.60) also triggers.
+
     Returns:
         dict: { text_score, image_score, combined_score, is_match }
     """
-    # 1. Text similarity (TF-IDF)
+    # 1. Semantic TF-IDF on full description
     desc1 = str(new_report.get('description', '')) + " " + str(new_report.get('item_name', ''))
     desc2 = str(found_report.get('description', '')) + " " + str(found_report.get('item_name', ''))
     text_score = compute_text_similarity(desc1, desc2)
-    
+
     # 2. Category match bonus
     category_bonus = 0.15 if new_report.get('category') == found_report.get('category') else 0.0
-    
-    # 3. Name substring match bonus
-    lost_name = str(new_report.get('item_name', '')).lower()
+
+    # 3. Semantic name-similarity bonus
+    lost_name  = str(new_report.get('item_name',  '')).lower()
     found_name = str(found_report.get('item_name', '')).lower()
-    name_bonus = 0.2 if (lost_name in found_name or found_name in lost_name) else 0.0
-    
-    # 4. Image similarity (OpenCV) — only if both have images
-    image_score = 0.0
+    semantic_name_score = compute_text_similarity(lost_name, found_name)
+    exact_substring     = (lost_name in found_name) or (found_name in lost_name)
+    name_bonus = 0.20 if (exact_substring or semantic_name_score >= 0.50) else 0.0
+
+    # 4. OpenCV image similarity -- only if both reports have images
+    image_score   = 0.0
     image_details = None
-    lost_img = new_report.get('image_url', '')
+    lost_img  = new_report.get('image_url',  '')
     found_img = found_report.get('image_url', '')
-    
+
     if lost_img and found_img:
         img_result = compute_image_similarity_safe(lost_img, found_img)
         if img_result:
-            image_score = img_result.get('combined_score', 0.0)
+            image_score   = img_result.get('combined_score', 0.0)
             image_details = img_result
-    
-    # 5. Combined score:
-    #    - If both have images: Text 40% + Image 35% + Bonuses 25%
-    #    - If no images:        Text 70% + Bonuses 30%
+
+    # 5. Weighted combination
+    #    With images : Text 40% + Image 35% + Bonuses 25%
+    #    Without     : Text 70%              + Bonuses 30%
     if lost_img and found_img and image_details:
         combined = (text_score * 0.40) + (image_score * 0.35) + (category_bonus + name_bonus) * 0.25 / 0.35
     else:
@@ -160,16 +108,18 @@ def smart_match(new_report, found_report):
 
     # Clamp to [0, 1]
     combined = max(0.0, min(1.0, combined))
-    
-    MATCH_THRESHOLD = 0.25
-    
+
+    # Threshold raised to 0.30 for higher precision.
+    # Fallback: category + strong semantic name match also fires a match.
+    MATCH_THRESHOLD = 0.30
+
     return {
-        "text_score": round(text_score, 4),
-        "image_score": round(image_score, 4),
+        "text_score":    round(text_score, 4),
+        "image_score":   round(image_score, 4),
         "image_details": image_details,
         "category_match": new_report.get('category') == found_report.get('category'),
         "combined_score": round(combined, 4),
-        "is_match": combined > MATCH_THRESHOLD or (category_bonus > 0 and name_bonus > 0)
+        "is_match": combined > MATCH_THRESHOLD or (category_bonus > 0 and semantic_name_score >= 0.60)
     }
 
 
